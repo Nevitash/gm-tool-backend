@@ -23,8 +23,9 @@ type Encounter struct {
 	UserID uuid.UUID `json:"user_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EncounterQuery when eager-loading is set.
-	Edges        EncounterEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges          EncounterEdges `json:"edges"`
+	user_encounter *uuid.UUID
+	selectValues   sql.SelectValues
 }
 
 // EncounterEdges holds the relations/edges for other nodes in the graph.
@@ -54,6 +55,8 @@ func (*Encounter) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case encounter.FieldID, encounter.FieldUserID:
 			values[i] = new(uuid.UUID)
+		case encounter.ForeignKeys[0]: // user_encounter
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -86,6 +89,13 @@ func (e *Encounter) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field user_id", values[i])
 			} else if value != nil {
 				e.UserID = *value
+			}
+		case encounter.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field user_encounter", values[i])
+			} else if value.Valid {
+				e.user_encounter = new(uuid.UUID)
+				*e.user_encounter = *value.S.(*uuid.UUID)
 			}
 		default:
 			e.selectValues.Set(columns[i], values[i])

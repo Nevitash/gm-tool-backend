@@ -7,6 +7,7 @@ import (
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
 	"gm-tool-backend/ent/schema"
+	"gm-tool-backend/ent/user"
 
 	"github.com/google/uuid"
 )
@@ -61,4 +62,14 @@ func init() {
 	encountercombatantDescID := encountercombatantFields[0].Descriptor()
 	// encountercombatant.DefaultID holds the default value on creation for the id field.
 	encountercombatant.DefaultID = encountercombatantDescID.Default.(func() uuid.UUID)
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescVerified is the schema descriptor for verified field.
+	userDescVerified := userFields[3].Descriptor()
+	// user.DefaultVerified holds the default value on creation for the verified field.
+	user.DefaultVerified = userDescVerified.Default.(bool)
+	// userDescID is the schema descriptor for id field.
+	userDescID := userFields[0].Descriptor()
+	// user.DefaultID holds the default value on creation for the id field.
+	user.DefaultID = userDescID.Default.(func() uuid.UUID)
 }

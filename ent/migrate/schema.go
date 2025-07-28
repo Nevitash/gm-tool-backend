@@ -33,12 +33,21 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "name", Type: field.TypeString},
 		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "user_encounter", Type: field.TypeUUID, Nullable: true},
 	}
 	// EncountersTable holds the schema information for the "encounters" table.
 	EncountersTable = &schema.Table{
 		Name:       "encounters",
 		Columns:    EncountersColumns,
 		PrimaryKey: []*schema.Column{EncountersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "encounters_users_encounter",
+				Columns:    []*schema.Column{EncountersColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// EncounterCombatantsColumns holds the columns for the "encounter_combatants" table.
 	EncounterCombatantsColumns = []*schema.Column{
@@ -69,15 +78,30 @@ var (
 			},
 		},
 	}
+	// UsersColumns holds the columns for the "users" table.
+	UsersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "email", Type: field.TypeString},
+		{Name: "verified", Type: field.TypeBool, Default: false},
+	}
+	// UsersTable holds the schema information for the "users" table.
+	UsersTable = &schema.Table{
+		Name:       "users",
+		Columns:    UsersColumns,
+		PrimaryKey: []*schema.Column{UsersColumns[0]},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		CombatantsTable,
 		EncountersTable,
 		EncounterCombatantsTable,
+		UsersTable,
 	}
 )
 
 func init() {
+	EncountersTable.ForeignKeys[0].RefTable = UsersTable
 	EncounterCombatantsTable.ForeignKeys[0].RefTable = CombatantsTable
 	EncounterCombatantsTable.ForeignKeys[1].RefTable = EncountersTable
 }

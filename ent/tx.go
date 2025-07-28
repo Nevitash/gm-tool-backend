@@ -18,6 +18,8 @@ type Tx struct {
 	Encounter *EncounterClient
 	// EncounterCombatant is the client for interacting with the EncounterCombatant builders.
 	EncounterCombatant *EncounterCombatantClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 
 	// lazily loaded.
 	client     *Client
@@ -152,6 +154,7 @@ func (tx *Tx) init() {
 	tx.Combatant = NewCombatantClient(tx.config)
 	tx.Encounter = NewEncounterClient(tx.config)
 	tx.EncounterCombatant = NewEncounterCombatantClient(tx.config)
+	tx.User = NewUserClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

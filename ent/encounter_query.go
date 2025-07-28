@@ -26,6 +26,7 @@ type EncounterQuery struct {
 	inters                  []Interceptor
 	predicates              []predicate.Encounter
 	withEncounterCombatants *EncounterCombatantQuery
+	withFKs                 bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -371,11 +372,15 @@ func (eq *EncounterQuery) prepareQuery(ctx context.Context) error {
 func (eq *EncounterQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Encounter, error) {
 	var (
 		nodes       = []*Encounter{}
+		withFKs     = eq.withFKs
 		_spec       = eq.querySpec()
 		loadedTypes = [1]bool{
 			eq.withEncounterCombatants != nil,
 		}
 	)
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, encounter.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Encounter).scanValues(nil, columns)
 	}

@@ -14,3 +14,6 @@ type Encounter func(*sql.Selector)
 
 // EncounterCombatant is the predicate function for encountercombatant builders.
 type EncounterCombatant func(*sql.Selector)
+
+// User is the predicate function for user builders.
+type User func(*sql.Selector)

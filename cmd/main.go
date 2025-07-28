@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"gm-tool-backend/internal/config"
 	"gm-tool-backend/internal/database"
 	"gm-tool-backend/internal/routes"
 
@@ -13,12 +14,14 @@ import (
 
 func main() {
 	// Initialize database
-	client, err := database.NewClient()
-	if err != nil {
-		log.Fatalf("failed opening connection to sqlite: %v", err)
-	}
-	defer database.Close(client)
-
+	dbConfig := config.NewDatabaseConfig()
+	database.MigrateSchema(
+		dbConfig.GetHost(),
+		dbConfig.GetPort(),
+		dbConfig.GetDatabaseName(),
+		dbConfig.GetUser(),
+		dbConfig.GetPassword(),
+	)
 	// Initialize Echo
 	e := echo.New()
 
@@ -33,7 +36,7 @@ func main() {
 	})
 
 	// Setup API routes
-	routes.SetupRoutes(e, client)
+	routes.SetupRoutes(e)
 
 	// Start server
 	log.Println("Starting server on :8080")

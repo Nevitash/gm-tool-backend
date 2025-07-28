@@ -9,6 +9,7 @@ import (
 	"gm-tool-backend/ent/combatant"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
+	"gm-tool-backend/ent/user"
 	"reflect"
 	"sync"
 
@@ -78,6 +79,7 @@ func checkColumn(table, column string) error {
 			combatant.Table:          combatant.ValidColumn,
 			encounter.Table:          encounter.ValidColumn,
 			encountercombatant.Table: encountercombatant.ValidColumn,
+			user.Table:               user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)
