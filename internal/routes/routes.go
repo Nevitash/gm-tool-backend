@@ -1,11 +1,29 @@
 package routes
 
 import (
-    "github.com/gin-gonic/gin"
-    "go-rest-api-backend/internal/handlers"
+	"gm-tool-backend/ent"
+	"gm-tool-backend/internal/handlers"
+
+	"github.com/labstack/echo/v4"
 )
 
-func SetupRoutes(router *gin.Engine) {
-    router.GET("/items", handlers.GetItems)
-    router.POST("/items", handlers.CreateItem)
+func SetupRoutes(echoInstance *echo.Echo, client *ent.Client) {
+	// Encounter routes
+	echoInstance.GET("/encounters", handlers.GetEncounters(client))
+	echoInstance.POST("/encounters", handlers.CreateEncounter(client))
+	echoInstance.GET("/encounters/:id", handlers.GetEncounter(client))
+	echoInstance.PUT("/encounters/:id", handlers.UpdateEncounter(client))
+	echoInstance.DELETE("/encounters/:id", handlers.DeleteEncounter(client))
+
+	// Combatant routes
+	echoInstance.GET("/combatants", handlers.GetCombatants(client))
+	echoInstance.POST("/combatants", handlers.CreateCombatant(client))
+	echoInstance.GET("/combatants/:id", handlers.GetCombatant(client))
+	echoInstance.PUT("/combatants/:id", handlers.UpdateCombatant(client))
+	echoInstance.DELETE("/combatants/:id", handlers.DeleteCombatant(client))
+
+	// Encounter-Combatant relationship routes
+	echoInstance.POST("/encounters/:id/combatants", handlers.AddCombatantToEncounter(client))
+	echoInstance.DELETE("/encounters/:encounter_id/combatants/:combatant_id", handlers.RemoveCombatantFromEncounter(client))
+	echoInstance.GET("/encounters/:id/combatants", handlers.GetEncounterCombatants(client))
 }
