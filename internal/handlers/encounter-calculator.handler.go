@@ -102,23 +102,13 @@ func CalculateEncounterCRs(partySize int, partyLevel int, difficulty config.Diff
 		return nil, fmt.Errorf("party size and level must be positive")
 	}
 
-	// Step 1: Determine the total target XP budget for the encounter based on 2024 rules
-	// The `difficulty` constant now directly maps to a threshold lookup.
 	targetXPPerCharacter, err := get2024XpThreshold(partyLevel, difficulty)
 	if err != nil {
-		return nil, err // Propagate the error from threshold lookup
+		return nil, err
 	}
 	targetTotalXP := float64(partySize * targetXPPerCharacter)
-
-	// Step 2 (OLD 2014 rule): Get encounter multiplier - THIS IS REMOVED FOR 2024 RULES!
-	// Step 3 (OLD 2014 rule): Calculate adjusted XP budget - THIS IS REMOVED FOR 2024 RULES!
-	// In 2024 rules, targetTotalXP *is* the total XP.
-
-	// Step 4: Find the baseline CR that balances the encounter
-	// The findBalancedBaselineCR function will now directly aim for targetTotalXP.
 	baselineCR := findBalancedBaselineCR(targetTotalXP, monsters)
 
-	// Step 5: Calculate actual CRs and XP for each monster
 	result := make([]requests.Monster, len(monsters))
 	for i, monster := range monsters {
 		actualCR := adjustCR(baselineCR, monster.CRAdjustment)
@@ -143,8 +133,6 @@ func CalculateEncounterCRs(partySize int, partyLevel int, difficulty config.Diff
 	return result, nil
 }
 
-// findBalancedBaselineCR finds the CR that makes the total encounter XP match the budget
-// This function's logic remains largely the same, but it now receives the *final* target XP.
 func findBalancedBaselineCR(targetXP float64, monsters []requests.Monster) string {
 	var crOptions []string
 	for cr := range config.ChallangeRatingExp {
@@ -155,8 +143,6 @@ func findBalancedBaselineCR(targetXP float64, monsters []requests.Monster) strin
 		return config.ChallangeRatingExp[crOptions[i]] < config.ChallangeRatingExp[crOptions[j]]
 	})
 
-	// Start with a reasonable default, like CR 0 or 1/8 if available.
-	// Ensure bestCR is initialized to a valid CR, preferably the lowest one.
 	bestCR := "0" // Smallest CR by XP
 	if len(crOptions) > 0 {
 		bestCR = crOptions[0]
@@ -191,7 +177,6 @@ func findBalancedBaselineCR(targetXP float64, monsters []requests.Monster) strin
 	return bestCR
 }
 
-// adjustCR adjusts a base CR by the specified amount
 func adjustCR(baseCR string, adjustment int) string {
 	if adjustment == 0 {
 		return baseCR
@@ -227,8 +212,6 @@ func adjustCR(baseCR string, adjustment int) string {
 	return result
 }
 
-// get2024XpThreshold returns the per-character XP threshold for a given level and difficulty
-// based on the 2024 D&D rules.
 func get2024XpThreshold(level int, difficulty config.Difficulty) (int, error) {
 	levelThresholds, ok := config.DifficultiyExpThresholds[level]
 	if !ok {
@@ -241,12 +224,10 @@ func get2024XpThreshold(level int, difficulty config.Difficulty) (int, error) {
 	return threshold, nil
 }
 
-// Helper function to create monsters with adjustments (assuming it's used elsewhere for testing/request generation)
 func NewMonster(crAdjustment int) requests.Monster {
 	return requests.Monster{CRAdjustment: crAdjustment}
 }
 
-// getDifficultyName helps map the new integer constants back to readable names
 func getDifficultyName(difficulty config.Difficulty) string {
 	switch difficulty {
 	case config.DIFFICULTY_EASY:
