@@ -103,3 +103,241 @@ var RecommendedStatsByCr = map[string]*responses.RecommendedStatsResponse{
 	"25":  responses.NewRecommendedStatsResponse("25", 22, 550, 16, 156, 23),
 	"26":  responses.NewRecommendedStatsResponse("26", 22, 600, 17, 162, 24),
 }
+
+type Spells struct {
+	Level  int `json:"level"`
+	Amount int `json:"amount"`
+}
+
+type SpellSlotsPerCrResponse struct {
+	Cr    string   `json:"cr"`
+	Slots []Spells `json:"slots"`
+}
+
+func NewSpellSlotsPerCrResponse(cr string, slots []Spells) *SpellSlotsPerCrResponse {
+	return &SpellSlotsPerCrResponse{
+		Slots: slots,
+	}
+}
+
+var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
+	"0": NewSpellSlotsPerCrResponse("0", []Spells{
+		{Level: 0, Amount: 1}, // Cantrips
+		{Level: 1, Amount: 2},
+	}),
+	"1/8": NewSpellSlotsPerCrResponse("1/8", []Spells{
+		{Level: 0, Amount: 2},
+		{Level: 1, Amount: 2},
+	}),
+	"1/4": NewSpellSlotsPerCrResponse("1/4", []Spells{
+		{Level: 0, Amount: 2},
+		{Level: 1, Amount: 3},
+	}),
+	"1/2": NewSpellSlotsPerCrResponse("1/2", []Spells{
+		{Level: 0, Amount: 2},
+		{Level: 1, Amount: 3},
+		{Level: 2, Amount: 1},
+	}),
+	"1": NewSpellSlotsPerCrResponse("1", []Spells{
+		{Level: 0, Amount: 3},
+		{Level: 1, Amount: 3},
+		{Level: 2, Amount: 1},
+	}),
+	"2": NewSpellSlotsPerCrResponse("2", []Spells{
+		{Level: 0, Amount: 3},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 2},
+	}),
+	"3": NewSpellSlotsPerCrResponse("3", []Spells{
+		{Level: 0, Amount: 3},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 1},
+	}),
+	"4": NewSpellSlotsPerCrResponse("4", []Spells{
+		{Level: 0, Amount: 4},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 2},
+	}),
+	"5": NewSpellSlotsPerCrResponse("5", []Spells{
+		{Level: 0, Amount: 4},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 1},
+	}),
+	"6": NewSpellSlotsPerCrResponse("6", []Spells{
+		{Level: 0, Amount: 4},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 2},
+	}),
+	"7": NewSpellSlotsPerCrResponse("7", []Spells{
+		{Level: 0, Amount: 4},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 2},
+		{Level: 5, Amount: 1},
+	}),
+	"8": NewSpellSlotsPerCrResponse("8", []Spells{
+		{Level: 0, Amount: 5},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 2},
+		{Level: 5, Amount: 2},
+	}),
+	"9": NewSpellSlotsPerCrResponse("9", []Spells{
+		{Level: 0, Amount: 5},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 3},
+		{Level: 5, Amount: 2},
+		{Level: 6, Amount: 1},
+	}),
+	"10": NewSpellSlotsPerCrResponse("10", []Spells{
+		{Level: 0, Amount: 5},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 3},
+		{Level: 5, Amount: 2},
+		{Level: 6, Amount: 1},
+	}),
+	"11": NewSpellSlotsPerCrResponse("11", []Spells{
+		{Level: 0, Amount: 5},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 3},
+		{Level: 5, Amount: 2},
+		{Level: 6, Amount: 2},
+		{Level: 7, Amount: 1},
+	}),
+	"12": NewSpellSlotsPerCrResponse("12", []Spells{
+		{Level: 0, Amount: 5},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 3},
+		{Level: 5, Amount: 2},
+		{Level: 6, Amount: 2},
+		{Level: 7, Amount: 1},
+	}),
+	"13": NewSpellSlotsPerCrResponse("13", []Spells{
+		{Level: 0, Amount: 5},
+		{Level: 1, Amount: 4},
+		{Level: 2, Amount: 3},
+		{Level: 3, Amount: 3},
+		{Level: 4, Amount: 3},
+		{Level: 5, Amount: 2},
+		{Level: 6, Amount: 2},
+		{Level: 7, Amount: 1},
+	}),
+	"14": NewSpellSlotsPerCrResponse("14", []Spells{
+		{Level: 0, Amount: 6},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 1},
+	}),
+	"15": NewSpellSlotsPerCrResponse("15", []Spells{
+		{Level: 0, Amount: 6},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 1},
+	}),
+	"16": NewSpellSlotsPerCrResponse("16", []Spells{
+		{Level: 0, Amount: 6},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 1},
+	}),
+	"17": NewSpellSlotsPerCrResponse("17", []Spells{
+		{Level: 0, Amount: 6},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"18": NewSpellSlotsPerCrResponse("18", []Spells{
+		{Level: 0, Amount: 6},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"19": NewSpellSlotsPerCrResponse("19", []Spells{
+		{Level: 0, Amount: 6},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"20": NewSpellSlotsPerCrResponse("20", []Spells{
+		{Level: 0, Amount: 6},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"21": NewSpellSlotsPerCrResponse("21", []Spells{
+		{Level: 0, Amount: 7},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"22": NewSpellSlotsPerCrResponse("22", []Spells{
+		{Level: 0, Amount: 7},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"23": NewSpellSlotsPerCrResponse("23", []Spells{
+		{Level: 0, Amount: 7},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"24": NewSpellSlotsPerCrResponse("24", []Spells{
+		{Level: 0, Amount: 7},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"25": NewSpellSlotsPerCrResponse("25", []Spells{
+		{Level: 0, Amount: 7},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"26": NewSpellSlotsPerCrResponse("26", []Spells{
+		{Level: 0, Amount: 7},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
+	}),
+	"27": NewSpellSlotsPerCrResponse("27", []Spells{
+		{Level: 0, Amount: 8},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 2},
+	}),
+	"28": NewSpellSlotsPerCrResponse("28", []Spells{
+		{Level: 0, Amount: 8},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 2},
+	}),
+	"29": NewSpellSlotsPerCrResponse("29", []Spells{
+		{Level: 0, Amount: 8},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 2},
+	}),
+	"30": NewSpellSlotsPerCrResponse("30", []Spells{
+		{Level: 0, Amount: 8},
+		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
+		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
+		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 2},
+	}),
+}
