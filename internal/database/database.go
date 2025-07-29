@@ -39,8 +39,8 @@ func CreateSchema() error {
 
 func GetClient() (*ent.Client, error) {
 	if globalClient == nil {
-		log.Print("No client was initialized. Call .Init() first.")
-		return nil, errors.New("No client was initialized. Call .Init() first.")
+		log.Print("o client was initialized. call .init() first")
+		return nil, errors.New("no client was initialized. call .init() first")
 	}
 	return globalClient, nil
 }
@@ -49,4 +49,13 @@ func CloseClient() {
 	if globalClient != nil {
 		globalClient.Close()
 	}
+}
+
+func InitForTest(dsn string) (*ent.Client, error) {
+	client, err := ent.Open("sqlite3", dsn) // Use "sqlite3" driver
+	if err != nil {
+		return nil, fmt.Errorf("failed opening connection to sqlite for tests: %w", err)
+	}
+	globalClient = client // Set the global client for tests
+	return globalClient, nil
 }
