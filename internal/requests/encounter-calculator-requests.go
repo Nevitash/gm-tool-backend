@@ -13,6 +13,10 @@ type RecommendedStatsRequest struct {
 	Cr string `query:"cr"`
 }
 
+type RecommendedSpellSlotsRequest struct {
+	Cr string `query:"cr"`
+}
+
 type Monster struct {
 	CRAdjustment int    `json:"adjustment"`
 	ActualCR     string `json:"cr"`

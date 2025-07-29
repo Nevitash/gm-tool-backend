@@ -13,14 +13,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// @Summary Get recommended stats for a enemy of the given CR
+// @Summary Get recommended stats for an enemy of the given CR
 // @Tags encounter-calculator
 // @Accept json
 // @Produce json
 // @Param encounter query requests.RecommendedStatsRequest true "CR for which the recommended stats should be loaded"
-// @Success 200 {array} requests.Monster "Calculated monster CRs and XP values"
+// @Success 200 {array} responses.RecommendedStatsResponse "Calculated stats for the given CR"
 // @Failure 400 {string} string "Bad request - invalid request format or calculation error"
-// @Router /encounter-calculator/recommend [get]
+// @Router /encounter-calculator/recommend/stats [get]
 func GetRecommandedStats(c echo.Context) error {
 	request := &requests.RecommendedStatsRequest{}
 	err := c.Bind(request)
@@ -29,9 +29,30 @@ func GetRecommandedStats(c echo.Context) error {
 	}
 	stats, ok := config.RecommendedStatsByCr[request.Cr]
 	if !ok {
-		return fmt.Errorf("no recommended stats vor cr '%v'", request.Cr)
+		return fmt.Errorf("no recommended stats for cr '%v'", request.Cr)
 	}
 	response := responses.NewRecommendedStatsResponse(stats.Cr, stats.Ac, stats.Hp, stats.AttackModifier, stats.AvarageDamage, stats.Dc)
+	return c.JSON(http.StatusOK, response)
+}
+
+// @Summary Get recommended spell slots for an enemy of the given CR
+// @Tags encounter-calculator
+// @Accept json
+// @Produce json
+// @Param encounter query requests.RecommendedSpellSlotsRequest true "CR for which the recommended spell slots should be loaded"
+// @Success 200 {array} responses.SpellSlotsPerCrResponse "Calculated spell slots for the given CR"
+// @Failure 400 {string} string "Bad request - invalid request format or calculation error"
+// @Router /encounter-calculator/recommend/spell-slots [get]
+func GetRecoommendedSpellSlots(c echo.Context) error {
+	request := &requests.RecommendedSpellSlotsRequest{}
+	err := c.Bind(request)
+	if err != nil {
+		return fmt.Errorf("invalid request format: %w", err)
+	}
+	response, ok := config.RecommendedSpellSlots[request.Cr]
+	if !ok {
+		return fmt.Errorf("no recommended spell slots for cr '%v'", request.Cr)
+	}
 	return c.JSON(http.StatusOK, response)
 }
 

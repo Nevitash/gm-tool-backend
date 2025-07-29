@@ -104,77 +104,61 @@ var RecommendedStatsByCr = map[string]*responses.RecommendedStatsResponse{
 	"26":  responses.NewRecommendedStatsResponse("26", 22, 600, 17, 162, 24),
 }
 
-type Spells struct {
-	Level  int `json:"level"`
-	Amount int `json:"amount"`
-}
-
-type SpellSlotsPerCrResponse struct {
-	Cr    string   `json:"cr"`
-	Slots []Spells `json:"slots"`
-}
-
-func NewSpellSlotsPerCrResponse(cr string, slots []Spells) *SpellSlotsPerCrResponse {
-	return &SpellSlotsPerCrResponse{
-		Slots: slots,
-	}
-}
-
-var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
-	"0": NewSpellSlotsPerCrResponse("0", []Spells{
+var RecommendedSpellSlots = map[string]*responses.SpellSlotsPerCrResponse{
+	"0": responses.NewSpellSlotsPerCrResponse("0", []responses.Spells{
 		{Level: 0, Amount: 1}, // Cantrips
 		{Level: 1, Amount: 2},
 	}),
-	"1/8": NewSpellSlotsPerCrResponse("1/8", []Spells{
+	"1/8": responses.NewSpellSlotsPerCrResponse("1/8", []responses.Spells{
 		{Level: 0, Amount: 2},
 		{Level: 1, Amount: 2},
 	}),
-	"1/4": NewSpellSlotsPerCrResponse("1/4", []Spells{
+	"1/4": responses.NewSpellSlotsPerCrResponse("1/4", []responses.Spells{
 		{Level: 0, Amount: 2},
 		{Level: 1, Amount: 3},
 	}),
-	"1/2": NewSpellSlotsPerCrResponse("1/2", []Spells{
+	"1/2": responses.NewSpellSlotsPerCrResponse("1/2", []responses.Spells{
 		{Level: 0, Amount: 2},
 		{Level: 1, Amount: 3},
 		{Level: 2, Amount: 1},
 	}),
-	"1": NewSpellSlotsPerCrResponse("1", []Spells{
+	"1": responses.NewSpellSlotsPerCrResponse("1", []responses.Spells{
 		{Level: 0, Amount: 3},
 		{Level: 1, Amount: 3},
 		{Level: 2, Amount: 1},
 	}),
-	"2": NewSpellSlotsPerCrResponse("2", []Spells{
+	"2": responses.NewSpellSlotsPerCrResponse("2", []responses.Spells{
 		{Level: 0, Amount: 3},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 2},
 	}),
-	"3": NewSpellSlotsPerCrResponse("3", []Spells{
+	"3": responses.NewSpellSlotsPerCrResponse("3", []responses.Spells{
 		{Level: 0, Amount: 3},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
 		{Level: 3, Amount: 1},
 	}),
-	"4": NewSpellSlotsPerCrResponse("4", []Spells{
+	"4": responses.NewSpellSlotsPerCrResponse("4", []responses.Spells{
 		{Level: 0, Amount: 4},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
 		{Level: 3, Amount: 2},
 	}),
-	"5": NewSpellSlotsPerCrResponse("5", []Spells{
+	"5": responses.NewSpellSlotsPerCrResponse("5", []responses.Spells{
 		{Level: 0, Amount: 4},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
 		{Level: 3, Amount: 3},
 		{Level: 4, Amount: 1},
 	}),
-	"6": NewSpellSlotsPerCrResponse("6", []Spells{
+	"6": responses.NewSpellSlotsPerCrResponse("6", []responses.Spells{
 		{Level: 0, Amount: 4},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
 		{Level: 3, Amount: 3},
 		{Level: 4, Amount: 2},
 	}),
-	"7": NewSpellSlotsPerCrResponse("7", []Spells{
+	"7": responses.NewSpellSlotsPerCrResponse("7", []responses.Spells{
 		{Level: 0, Amount: 4},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
@@ -182,7 +166,7 @@ var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
 		{Level: 4, Amount: 2},
 		{Level: 5, Amount: 1},
 	}),
-	"8": NewSpellSlotsPerCrResponse("8", []Spells{
+	"8": responses.NewSpellSlotsPerCrResponse("8", []responses.Spells{
 		{Level: 0, Amount: 5},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
@@ -190,7 +174,7 @@ var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
 		{Level: 4, Amount: 2},
 		{Level: 5, Amount: 2},
 	}),
-	"9": NewSpellSlotsPerCrResponse("9", []Spells{
+	"9": responses.NewSpellSlotsPerCrResponse("9", []responses.Spells{
 		{Level: 0, Amount: 5},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
@@ -199,7 +183,7 @@ var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
 		{Level: 5, Amount: 2},
 		{Level: 6, Amount: 1},
 	}),
-	"10": NewSpellSlotsPerCrResponse("10", []Spells{
+	"10": responses.NewSpellSlotsPerCrResponse("10", []responses.Spells{
 		{Level: 0, Amount: 5},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
@@ -208,7 +192,7 @@ var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
 		{Level: 5, Amount: 2},
 		{Level: 6, Amount: 1},
 	}),
-	"11": NewSpellSlotsPerCrResponse("11", []Spells{
+	"11": responses.NewSpellSlotsPerCrResponse("11", []responses.Spells{
 		{Level: 0, Amount: 5},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
@@ -218,7 +202,7 @@ var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
 		{Level: 6, Amount: 2},
 		{Level: 7, Amount: 1},
 	}),
-	"12": NewSpellSlotsPerCrResponse("12", []Spells{
+	"12": responses.NewSpellSlotsPerCrResponse("12", []responses.Spells{
 		{Level: 0, Amount: 5},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
@@ -228,7 +212,7 @@ var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
 		{Level: 6, Amount: 2},
 		{Level: 7, Amount: 1},
 	}),
-	"13": NewSpellSlotsPerCrResponse("13", []Spells{
+	"13": responses.NewSpellSlotsPerCrResponse("13", []responses.Spells{
 		{Level: 0, Amount: 5},
 		{Level: 1, Amount: 4},
 		{Level: 2, Amount: 3},
@@ -238,103 +222,103 @@ var RecommendedSpellSlots = map[string]*SpellSlotsPerCrResponse{
 		{Level: 6, Amount: 2},
 		{Level: 7, Amount: 1},
 	}),
-	"14": NewSpellSlotsPerCrResponse("14", []Spells{
+	"14": responses.NewSpellSlotsPerCrResponse("14", []responses.Spells{
 		{Level: 0, Amount: 6},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 1},
 	}),
-	"15": NewSpellSlotsPerCrResponse("15", []Spells{
+	"15": responses.NewSpellSlotsPerCrResponse("15", []responses.Spells{
 		{Level: 0, Amount: 6},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 1},
 	}),
-	"16": NewSpellSlotsPerCrResponse("16", []Spells{
+	"16": responses.NewSpellSlotsPerCrResponse("16", []responses.Spells{
 		{Level: 0, Amount: 6},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 1},
 	}),
-	"17": NewSpellSlotsPerCrResponse("17", []Spells{
+	"17": responses.NewSpellSlotsPerCrResponse("17", []responses.Spells{
 		{Level: 0, Amount: 6},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"18": NewSpellSlotsPerCrResponse("18", []Spells{
+	"18": responses.NewSpellSlotsPerCrResponse("18", []responses.Spells{
 		{Level: 0, Amount: 6},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"19": NewSpellSlotsPerCrResponse("19", []Spells{
+	"19": responses.NewSpellSlotsPerCrResponse("19", []responses.Spells{
 		{Level: 0, Amount: 6},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"20": NewSpellSlotsPerCrResponse("20", []Spells{
+	"20": responses.NewSpellSlotsPerCrResponse("20", []responses.Spells{
 		{Level: 0, Amount: 6},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 2}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"21": NewSpellSlotsPerCrResponse("21", []Spells{
+	"21": responses.NewSpellSlotsPerCrResponse("21", []responses.Spells{
 		{Level: 0, Amount: 7},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"22": NewSpellSlotsPerCrResponse("22", []Spells{
+	"22": responses.NewSpellSlotsPerCrResponse("22", []responses.Spells{
 		{Level: 0, Amount: 7},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"23": NewSpellSlotsPerCrResponse("23", []Spells{
+	"23": responses.NewSpellSlotsPerCrResponse("23", []responses.Spells{
 		{Level: 0, Amount: 7},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"24": NewSpellSlotsPerCrResponse("24", []Spells{
+	"24": responses.NewSpellSlotsPerCrResponse("24", []responses.Spells{
 		{Level: 0, Amount: 7},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"25": NewSpellSlotsPerCrResponse("25", []Spells{
+	"25": responses.NewSpellSlotsPerCrResponse("25", []responses.Spells{
 		{Level: 0, Amount: 7},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"26": NewSpellSlotsPerCrResponse("26", []Spells{
+	"26": responses.NewSpellSlotsPerCrResponse("26", []responses.Spells{
 		{Level: 0, Amount: 7},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 1},
 	}),
-	"27": NewSpellSlotsPerCrResponse("27", []Spells{
+	"27": responses.NewSpellSlotsPerCrResponse("27", []responses.Spells{
 		{Level: 0, Amount: 8},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 2},
 	}),
-	"28": NewSpellSlotsPerCrResponse("28", []Spells{
+	"28": responses.NewSpellSlotsPerCrResponse("28", []responses.Spells{
 		{Level: 0, Amount: 8},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 2},
 	}),
-	"29": NewSpellSlotsPerCrResponse("29", []Spells{
+	"29": responses.NewSpellSlotsPerCrResponse("29", []responses.Spells{
 		{Level: 0, Amount: 8},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},
 		{Level: 7, Amount: 2}, {Level: 8, Amount: 2}, {Level: 9, Amount: 2},
 	}),
-	"30": NewSpellSlotsPerCrResponse("30", []Spells{
+	"30": responses.NewSpellSlotsPerCrResponse("30", []responses.Spells{
 		{Level: 0, Amount: 8},
 		{Level: 1, Amount: 4}, {Level: 2, Amount: 3}, {Level: 3, Amount: 3},
 		{Level: 4, Amount: 3}, {Level: 5, Amount: 3}, {Level: 6, Amount: 2},

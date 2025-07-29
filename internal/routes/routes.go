@@ -35,5 +35,6 @@ func setupUserRoutes(echoInstance *echo.Echo) {
 
 func setupCrCalculatorRoutes(echoInstance *echo.Echo) {
 	echoInstance.POST("/encounter-calculator", handlers.CalculateMonsterCrForEncounter)
-	echoInstance.GET("/encounter-calculator/recommend", handlers.GetRecommandedStats)
+	echoInstance.GET("/encounter-calculator/recommend/stats", handlers.GetRecommandedStats)
+	echoInstance.GET("/encounter-calculator/recommend/spell-slots", handlers.GetRecoommendedSpellSlots)
 }

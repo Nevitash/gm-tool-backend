@@ -58,7 +58,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/encounter-calculator/recommend": {
+        "/encounter-calculator/recommend/spell-slots": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -69,7 +69,7 @@ const docTemplate = `{
                 "tags": [
                     "encounter-calculator"
                 ],
-                "summary": "Get recommended stats for a enemy of the given CR",
+                "summary": "Get recommended spell slots for an enemy of the given CR",
                 "parameters": [
                     {
                         "type": "string",
@@ -79,11 +79,49 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Calculated monster CRs and XP values",
+                        "description": "Calculated spell slots for the given CR",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/requests.Monster"
+                                "$ref": "#/definitions/responses.SpellSlotsPerCrResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid request format or calculation error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/encounter-calculator/recommend/stats": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "encounter-calculator"
+                ],
+                "summary": "Get recommended stats for an enemy of the given CR",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "cr",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Calculated stats for the given CR",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/responses.RecommendedStatsResponse"
                             }
                         }
                     },
@@ -400,6 +438,54 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "responses.RecommendedStatsResponse": {
+            "type": "object",
+            "properties": {
+                "ac": {
+                    "type": "integer"
+                },
+                "attackModifier": {
+                    "type": "integer"
+                },
+                "avarageDamage": {
+                    "type": "integer"
+                },
+                "cr": {
+                    "type": "string"
+                },
+                "dc": {
+                    "type": "integer"
+                },
+                "hp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "responses.SpellSlotsPerCrResponse": {
+            "type": "object",
+            "properties": {
+                "cr": {
+                    "type": "string"
+                },
+                "slots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.Spells"
+                    }
+                }
+            }
+        },
+        "responses.Spells": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
                 }
             }
         }

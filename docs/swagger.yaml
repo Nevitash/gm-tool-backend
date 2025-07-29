@@ -186,6 +186,37 @@ definitions:
       name:
         type: string
     type: object
+  responses.RecommendedStatsResponse:
+    properties:
+      ac:
+        type: integer
+      attackModifier:
+        type: integer
+      avarageDamage:
+        type: integer
+      cr:
+        type: string
+      dc:
+        type: integer
+      hp:
+        type: integer
+    type: object
+  responses.SpellSlotsPerCrResponse:
+    properties:
+      cr:
+        type: string
+      slots:
+        items:
+          $ref: '#/definitions/responses.Spells'
+        type: array
+    type: object
+  responses.Spells:
+    properties:
+      amount:
+        type: integer
+      level:
+        type: integer
+    type: object
 host: localhost
 info:
   contact: {}
@@ -222,7 +253,7 @@ paths:
       summary: Calculate monster CR for encounter
       tags:
       - encounter-calculator
-  /encounter-calculator/recommend:
+  /encounter-calculator/recommend/spell-slots:
     get:
       consumes:
       - application/json
@@ -234,16 +265,40 @@ paths:
       - application/json
       responses:
         "200":
-          description: Calculated monster CRs and XP values
+          description: Calculated spell slots for the given CR
           schema:
             items:
-              $ref: '#/definitions/requests.Monster'
+              $ref: '#/definitions/responses.SpellSlotsPerCrResponse'
             type: array
         "400":
           description: Bad request - invalid request format or calculation error
           schema:
             type: string
-      summary: Get recommended stats for a enemy of the given CR
+      summary: Get recommended spell slots for an enemy of the given CR
+      tags:
+      - encounter-calculator
+  /encounter-calculator/recommend/stats:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - in: query
+        name: cr
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Calculated stats for the given CR
+          schema:
+            items:
+              $ref: '#/definitions/responses.RecommendedStatsResponse'
+            type: array
+        "400":
+          description: Bad request - invalid request format or calculation error
+          schema:
+            type: string
+      summary: Get recommended stats for an enemy of the given CR
       tags:
       - encounter-calculator
   /user:
