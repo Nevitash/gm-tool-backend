@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -14,14 +15,11 @@ import (
 
 func main() {
 	// Initialize database
-	dbConfig := config.NewDatabaseConfig()
-	database.MigrateSchema(
-		dbConfig.GetHost(),
-		dbConfig.GetPort(),
-		dbConfig.GetDatabaseName(),
-		dbConfig.GetUser(),
-		dbConfig.GetPassword(),
-	)
+	if err := InitDatabase(config.NewDatabaseConfig()); err != nil {
+		log.Fatal(err)
+	}
+	defer database.CloseClient()
+
 	// Initialize Echo
 	e := echo.New()
 
@@ -41,4 +39,21 @@ func main() {
 	// Start server
 	log.Println("Starting server on :8080")
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func InitDatabase(config *config.DatabaseConfig) error {
+	_, err := database.Init(
+		config.GetHost(),
+		config.GetPort(),
+		config.GetDatabaseName(),
+		config.GetUser(),
+		config.GetPassword(),
+	)
+	if err != nil {
+		return fmt.Errorf("Error during database initilazion: %w", err)
+	}
+	if err := database.CreateSchema(); err != nil {
+		return fmt.Errorf("Error during schema creation: %w", err)
+	}
+	return nil
 }
