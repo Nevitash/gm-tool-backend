@@ -39,7 +39,7 @@ import (
 // @Title Backend for a gm toolkit
 // @Version 1.0.0
 // @Description These endpoints can help you game master for dnd5e (atm)
-// @Host localhost
+// @Host localhost:8080
 // @BasePath /
 func main() {
 	// Initialize database

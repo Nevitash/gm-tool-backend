@@ -186,10 +186,6 @@ func findBalancedBaselineCR(targetXP float64, monsters []requests.Monster) strin
 			bestDiff = diff
 			bestCR = baseCR
 		}
-
-		// Debug output for troubleshooting
-		fmt.Printf("DEBUG: Baseline CR %s -> Total XP: %.0f (target: %.0f, diff: %.0f)\n",
-			baseCR, totalXP, targetXP, diff)
 	}
 
 	return bestCR
