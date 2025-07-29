@@ -7,7 +7,8 @@ import (
 )
 
 func SetupRoutes(echoInstance *echo.Echo) {
-	SetupUserRoutes(echoInstance)
+	setupUserRoutes(echoInstance)
+	setupCrCalculatorRoutes(echoInstance)
 	// Encounter routes
 	// echoInstance.GET("/encounters", handlers.GetEncounters(client))
 	// echoInstance.POST("/encounters", handlers.CreateEncounter(client))
@@ -28,6 +29,10 @@ func SetupRoutes(echoInstance *echo.Echo) {
 	// echoInstance.GET("/encounters/:id/combatants", handlers.GetEncounterCombatants(client))
 }
 
-func SetupUserRoutes(echoInstance *echo.Echo) {
+func setupUserRoutes(echoInstance *echo.Echo) {
 	echoInstance.POST("/user", handlers.PostUser)
+}
+
+func setupCrCalculatorRoutes(echoInstance *echo.Echo) {
+	echoInstance.POST("/cr-calculator", handlers.CalculateMonsterCrForEncounter)
 }
