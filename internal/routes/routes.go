@@ -34,5 +34,5 @@ func setupUserRoutes(echoInstance *echo.Echo) {
 }
 
 func setupCrCalculatorRoutes(echoInstance *echo.Echo) {
-	echoInstance.POST("/cr-calculator", handlers.CalculateMonsterCrForEncounter)
+	echoInstance.POST("/encounter-calculator", handlers.CalculateMonsterCrForEncounter)
 }

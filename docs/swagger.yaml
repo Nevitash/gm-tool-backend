@@ -188,7 +188,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /cr-calculator:
+  /encounter-calculator:
     post:
       consumes:
       - application/json

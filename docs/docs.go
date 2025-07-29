@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/cr-calculator": {
+        "/encounter-calculator": {
             "post": {
                 "description": "Calculate the appropriate Challenge Rating for monsters in a D\u0026D 5e encounter based on party size, level, and difficulty",
                 "consumes": [

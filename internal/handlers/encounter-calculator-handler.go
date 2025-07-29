@@ -21,7 +21,7 @@ import (
 // @Param encounter body requests.CalculateEncounterCRsRequest true "Encounter CR calculation request"
 // @Success 200 {array} requests.Monster "Calculated monster CRs and XP values"
 // @Failure 400 {string} string "Bad request - invalid request format or calculation error"
-// @Router /cr-calculator [post]
+// @Router /encounter-calculator [post]
 func CalculateMonsterCrForEncounter(c echo.Context) error {
 	request := &requests.CalculateEncounterCRsRequest{}
 	err := c.Bind(request)
