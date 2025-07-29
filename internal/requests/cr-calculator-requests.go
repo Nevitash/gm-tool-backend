@@ -1,10 +1,16 @@
 package requests
 
-import "gm-tool-backend/internal/models"
+import "gm-tool-backend/internal/config"
 
 type CalculateEncounterCRsRequest struct {
-	PartySize  int              `json:"partySize"`
-	PartyLevel int              `json:"partyLevel"`
-	Difficulty int              `json:"difficulty"`
-	Monsters   []models.Monster `json:"monsters"`
+	PartySize  int               `json:"partySize"`
+	PartyLevel int               `json:"partyLevel"`
+	Difficulty config.Difficulty `json:"difficulty"`
+	Monsters   []Monster         `json:"monsters"`
+}
+
+type Monster struct {
+	CRAdjustment int    `json:"adjustment"`
+	ActualCR     string `json:"cr"`
+	XP           int    `json:"xp"`
 }
