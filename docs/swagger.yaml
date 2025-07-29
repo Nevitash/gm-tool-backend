@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   config.Difficulty:
     enum:
@@ -185,8 +186,12 @@ definitions:
       name:
         type: string
     type: object
+host: localhost
 info:
   contact: {}
+  description: These endpoints can help you game master for dnd5e (atm)
+  title: Backend for a gm toolkit
+  version: 1.0.0
 paths:
   /encounter-calculator:
     post:
@@ -216,7 +221,31 @@ paths:
             type: string
       summary: Calculate monster CR for encounter
       tags:
-      - cr-calculator
+      - encounter-calculator
+  /encounter-calculator/recommend:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - in: query
+        name: cr
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Calculated monster CRs and XP values
+          schema:
+            items:
+              $ref: '#/definitions/requests.Monster'
+            type: array
+        "400":
+          description: Bad request - invalid request format or calculation error
+          schema:
+            type: string
+      summary: Get recommended stats for a enemy of the given CR
+      tags:
+      - encounter-calculator
   /user:
     post:
       consumes:

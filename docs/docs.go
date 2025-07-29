@@ -25,7 +25,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "cr-calculator"
+                    "encounter-calculator"
                 ],
                 "summary": "Calculate monster CR for encounter",
                 "parameters": [
@@ -37,6 +37,44 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/requests.CalculateEncounterCRsRequest"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Calculated monster CRs and XP values",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/requests.Monster"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid request format or calculation error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/encounter-calculator/recommend": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "encounter-calculator"
+                ],
+                "summary": "Get recommended stats for a enemy of the given CR",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "cr",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -370,12 +408,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0.0",
+	Host:             "localhost",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Backend for a gm toolkit",
+	Description:      "These endpoints can help you game master for dnd5e (atm)",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

@@ -1,5 +1,7 @@
 package config
 
+import "gm-tool-backend/internal/responses"
+
 type Difficulty string
 
 var ChallangeRatingExp = map[string]int{
@@ -67,4 +69,37 @@ var DifficultiyExpThresholds = map[int]map[Difficulty]int{
 	18: {DIFFICULTY_EASY: 2100, DIFFICULTY_MEDIUM: 4200, DIFFICULTY_HARD: 6300, DIFFICULTY_DEADLY: 9500},
 	19: {DIFFICULTY_EASY: 2400, DIFFICULTY_MEDIUM: 4900, DIFFICULTY_HARD: 7300, DIFFICULTY_DEADLY: 10900},
 	20: {DIFFICULTY_EASY: 2800, DIFFICULTY_MEDIUM: 5700, DIFFICULTY_HARD: 8500, DIFFICULTY_DEADLY: 12700},
+}
+
+var RecommendedStatsByCr = map[string]*responses.RecommendedStatsResponse{
+	"0":   responses.NewRecommendedStatsResponse("0", 13, 3, 2, 1, 9),
+	"1/8": responses.NewRecommendedStatsResponse("1/8", 13, 9, 3, 3, 10),
+	"1/4": responses.NewRecommendedStatsResponse("1/4", 13, 15, 3, 6, 10),
+	"1/2": responses.NewRecommendedStatsResponse("1/2", 14, 24, 4, 9, 11),
+	"1":   responses.NewRecommendedStatsResponse("1", 14, 30, 4, 12, 11),
+	"2":   responses.NewRecommendedStatsResponse("2", 14, 45, 5, 18, 12),
+	"3":   responses.NewRecommendedStatsResponse("3", 15, 60, 5, 24, 12),
+	"4":   responses.NewRecommendedStatsResponse("4", 15, 75, 6, 30, 13),
+	"5":   responses.NewRecommendedStatsResponse("5", 15, 90, 6, 36, 13),
+	"6":   responses.NewRecommendedStatsResponse("6", 16, 105, 7, 42, 14),
+	"7":   responses.NewRecommendedStatsResponse("7", 16, 120, 7, 48, 14),
+	"8":   responses.NewRecommendedStatsResponse("8", 16, 135, 8, 54, 15),
+	"9":   responses.NewRecommendedStatsResponse("9", 17, 150, 8, 60, 15),
+	"10":  responses.NewRecommendedStatsResponse("10", 17, 165, 9, 66, 16),
+	"11":  responses.NewRecommendedStatsResponse("11", 17, 180, 9, 72, 16),
+	"12":  responses.NewRecommendedStatsResponse("12", 18, 195, 10, 78, 17),
+	"13":  responses.NewRecommendedStatsResponse("13", 18, 210, 10, 84, 17),
+	"14":  responses.NewRecommendedStatsResponse("14", 18, 225, 11, 90, 18),
+	"15":  responses.NewRecommendedStatsResponse("15", 19, 240, 11, 96, 18),
+	"16":  responses.NewRecommendedStatsResponse("16", 19, 255, 12, 102, 19),
+	"17":  responses.NewRecommendedStatsResponse("17", 19, 270, 12, 108, 19),
+	"18":  responses.NewRecommendedStatsResponse("18", 20, 285, 13, 114, 20),
+	"19":  responses.NewRecommendedStatsResponse("19", 20, 300, 13, 120, 20),
+	"20":  responses.NewRecommendedStatsResponse("20", 20, 315, 14, 126, 21),
+	"21":  responses.NewRecommendedStatsResponse("21", 21, 350, 14, 132, 21),
+	"22":  responses.NewRecommendedStatsResponse("22", 21, 400, 15, 138, 22),
+	"23":  responses.NewRecommendedStatsResponse("23", 21, 450, 15, 144, 22),
+	"24":  responses.NewRecommendedStatsResponse("24", 22, 500, 16, 150, 23),
+	"25":  responses.NewRecommendedStatsResponse("25", 22, 550, 16, 156, 23),
+	"26":  responses.NewRecommendedStatsResponse("26", 22, 600, 17, 162, 24),
 }

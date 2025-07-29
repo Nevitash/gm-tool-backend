@@ -1,8 +1,13 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "These endpoints can help you game master for dnd5e (atm)",
+        "title": "Backend for a gm toolkit",
+        "contact": {},
+        "version": "1.0.0"
     },
+    "host": "localhost",
+    "basePath": "/",
     "paths": {
         "/encounter-calculator": {
             "post": {
@@ -14,7 +19,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "cr-calculator"
+                    "encounter-calculator"
                 ],
                 "summary": "Calculate monster CR for encounter",
                 "parameters": [
@@ -26,6 +31,44 @@
                         "schema": {
                             "$ref": "#/definitions/requests.CalculateEncounterCRsRequest"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Calculated monster CRs and XP values",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/requests.Monster"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid request format or calculation error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/encounter-calculator/recommend": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "encounter-calculator"
+                ],
+                "summary": "Get recommended stats for a enemy of the given CR",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "cr",
+                        "in": "query"
                     }
                 ],
                 "responses": {

@@ -36,6 +36,11 @@ import (
 	_ "gm-tool-backend/docs" // This line is necessary for go-swagger to find your docs!
 )
 
+// @Title Backend for a gm toolkit
+// @Version 1.0.0
+// @Description These endpoints can help you game master for dnd5e (atm)
+// @Host localhost
+// @BasePath /
 func main() {
 	// Initialize database
 	if err := InitDatabase(config.NewDatabaseConfig()); err != nil {

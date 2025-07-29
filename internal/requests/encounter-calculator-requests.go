@@ -9,6 +9,10 @@ type CalculateEncounterCRsRequest struct {
 	Monsters   []Monster         `json:"monsters"`
 }
 
+type RecommendedStatsRequest struct {
+	Cr string `query:"cr"`
+}
+
 type Monster struct {
 	CRAdjustment int    `json:"adjustment"`
 	ActualCR     string `json:"cr"`

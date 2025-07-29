@@ -8,14 +8,37 @@ import (
 
 	"gm-tool-backend/internal/config"
 	"gm-tool-backend/internal/requests"
+	"gm-tool-backend/internal/responses"
 
 	"github.com/labstack/echo/v4"
 )
 
+// @Summary Get recommended stats for a enemy of the given CR
+// @Tags encounter-calculator
+// @Accept json
+// @Produce json
+// @Param encounter query requests.RecommendedStatsRequest true "CR for which the recommended stats should be loaded"
+// @Success 200 {array} requests.Monster "Calculated monster CRs and XP values"
+// @Failure 400 {string} string "Bad request - invalid request format or calculation error"
+// @Router /encounter-calculator/recommend [get]
+func GetRecommandedStats(c echo.Context) error {
+	request := &requests.RecommendedStatsRequest{}
+	err := c.Bind(request)
+	if err != nil {
+		return fmt.Errorf("invalid request format: %w", err)
+	}
+	stats, ok := config.RecommendedStatsByCr[request.Cr]
+	if !ok {
+		return fmt.Errorf("no recommended stats vor cr '%v'", request.Cr)
+	}
+	response := responses.NewRecommendedStatsResponse(stats.Cr, stats.Ac, stats.Hp, stats.AttackModifier, stats.AvarageDamage, stats.Dc)
+	return c.JSON(http.StatusOK, response)
+}
+
 // CalculateMonsterCrForEncounter calculates monster CR for an encounter
 // @Summary Calculate monster CR for encounter
 // @Description Calculate the appropriate Challenge Rating for monsters in a D&D 5e encounter based on party size, level, and difficulty
-// @Tags cr-calculator
+// @Tags encounter-calculator
 // @Accept json
 // @Produce json
 // @Param encounter body requests.CalculateEncounterCRsRequest true "Encounter CR calculation request"
