@@ -32,6 +32,16 @@ func CreateUser(userName string, email string) (*ent.User, error) {
 	return userModel, nil
 }
 
+// PostUser creates a new user
+// @Summary Create a new user
+// @Description Create a new user with name and email
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body requests.UserCreationRequest true "User creation request"
+// @Success 200 {object} ent.User "User created successfully"
+// @Failure 400 {string} string "Bad request - user couldn't be created"
+// @Router /user [post]
 func PostUser(c echo.Context) error {
 	request := &requests.UserCreationRequest{}
 	c.Bind(request)

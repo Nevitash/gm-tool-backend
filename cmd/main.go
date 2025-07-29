@@ -1,3 +1,23 @@
+// Package main GM Tool Backend API
+//
+// This is the GM Tool Backend API server for D&D 5e encounter management and CR calculation.
+//
+// Terms Of Service: http://swagger.io/terms/
+//
+// Schemes: http, https
+// Host: localhost:8080
+// BasePath: /
+// Version: 1.0.0
+// License: MIT http://opensource.org/licenses/MIT
+// Contact: GM Tool Support <support@gmtool.com> http://www.gmtool.com
+//
+// Consumes:
+// - application/json
+//
+// Produces:
+// - application/json
+//
+// swagger:meta
 package main
 
 import (
@@ -11,6 +31,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
+
+	_ "gm-tool-backend/docs" // This line is necessary for go-swagger to find your docs!
 )
 
 func main() {
@@ -32,6 +55,9 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "GM Tool Backend API")
 	})
+
+	// Swagger endpoint
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Setup API routes
 	routes.SetupRoutes(e)

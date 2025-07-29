@@ -12,7 +12,16 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Placeholder for CR calculator functionality
+// CalculateMonsterCrForEncounter calculates monster CR for an encounter
+// @Summary Calculate monster CR for encounter
+// @Description Calculate the appropriate Challenge Rating for monsters in a D&D 5e encounter based on party size, level, and difficulty
+// @Tags cr-calculator
+// @Accept json
+// @Produce json
+// @Param encounter body requests.CalculateEncounterCRsRequest true "Encounter CR calculation request"
+// @Success 200 {array} requests.Monster "Calculated monster CRs and XP values"
+// @Failure 400 {string} string "Bad request - invalid request format or calculation error"
+// @Router /cr-calculator [post]
 func CalculateMonsterCrForEncounter(c echo.Context) error {
 	request := &requests.CalculateEncounterCRsRequest{}
 	err := c.Bind(request)

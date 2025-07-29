@@ -1,0 +1,246 @@
+definitions:
+  config.Difficulty:
+    enum:
+    - easy
+    - medium
+    - hard
+    - deadly
+    type: string
+    x-enum-varnames:
+    - DIFFICULTY_EASY
+    - DIFFICULTY_MEDIUM
+    - DIFFICULTY_HARD
+    - DIFFICULTY_DEADLY
+  ent.Combatant:
+    properties:
+      ac:
+        description: Armor Class
+        type: integer
+      cr:
+        description: Challenge Rating, e.g., 1.25
+        type: number
+      damage:
+        description: Damage as decimal, e.g., 45.6
+        type: number
+      dc:
+        description: Difficulty Class
+        type: integer
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.CombatantEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the CombatantQuery when eager-loading is set.
+      hit_dice:
+        description: Hit dice as string, e.g., '2d8+2'
+        type: string
+      hp:
+        description: Hit Points
+        type: integer
+      id:
+        description: ID of the ent.
+        type: string
+      is_boss:
+        description: Whether this combatant is a boss
+        type: boolean
+      is_legendary:
+        description: Whether this combatant is legendary
+        type: boolean
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+      speed_mod:
+        description: Speed modifier, can be negative
+        type: integer
+    type: object
+  ent.CombatantEdges:
+    properties:
+      encounter_combatants:
+        description: EncounterCombatants holds the value of the encounter_combatants
+          edge.
+        items:
+          $ref: '#/definitions/ent.EncounterCombatant'
+        type: array
+    type: object
+  ent.Encounter:
+    properties:
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.EncounterEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the EncounterQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+      user_id:
+        description: ID of the user who owns this encounter
+        type: string
+    type: object
+  ent.EncounterCombatant:
+    properties:
+      combatant_id:
+        description: Reference to the combatant
+        type: string
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.EncounterCombatantEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the EncounterCombatantQuery when eager-loading is set.
+      encounter_id:
+        description: Reference to the encounter
+        type: string
+      id:
+        description: ID of the ent.
+        type: string
+      is_enemy:
+        description: Whether this combatant is an enemy
+        type: boolean
+      is_friendly:
+        description: Whether this combatant is friendly
+        type: boolean
+      is_party_member:
+        description: Whether this combatant is a party member
+        type: boolean
+    type: object
+  ent.EncounterCombatantEdges:
+    properties:
+      combatant:
+        allOf:
+        - $ref: '#/definitions/ent.Combatant'
+        description: Combatant holds the value of the combatant edge.
+      encounter:
+        allOf:
+        - $ref: '#/definitions/ent.Encounter'
+        description: Encounter holds the value of the encounter edge.
+    type: object
+  ent.EncounterEdges:
+    properties:
+      encounter_combatants:
+        description: EncounterCombatants holds the value of the encounter_combatants
+          edge.
+        items:
+          $ref: '#/definitions/ent.EncounterCombatant'
+        type: array
+    type: object
+  ent.User:
+    properties:
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.UserEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the UserQuery when eager-loading is set.
+      email:
+        description: Email holds the value of the "email" field.
+        type: string
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+      verified:
+        description: Verified holds the value of the "verified" field.
+        type: boolean
+    type: object
+  ent.UserEdges:
+    properties:
+      encounter:
+        description: Encounter holds the value of the encounter edge.
+        items:
+          $ref: '#/definitions/ent.Encounter'
+        type: array
+    type: object
+  requests.CalculateEncounterCRsRequest:
+    properties:
+      difficulty:
+        $ref: '#/definitions/config.Difficulty'
+      monsters:
+        items:
+          $ref: '#/definitions/requests.Monster'
+        type: array
+      partyLevel:
+        type: integer
+      partySize:
+        type: integer
+    type: object
+  requests.Monster:
+    properties:
+      adjustment:
+        type: integer
+      cr:
+        type: string
+      xp:
+        type: integer
+    type: object
+  requests.UserCreationRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /cr-calculator:
+    post:
+      consumes:
+      - application/json
+      description: Calculate the appropriate Challenge Rating for monsters in a D&D
+        5e encounter based on party size, level, and difficulty
+      parameters:
+      - description: Encounter CR calculation request
+        in: body
+        name: encounter
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CalculateEncounterCRsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Calculated monster CRs and XP values
+          schema:
+            items:
+              $ref: '#/definitions/requests.Monster'
+            type: array
+        "400":
+          description: Bad request - invalid request format or calculation error
+          schema:
+            type: string
+      summary: Calculate monster CR for encounter
+      tags:
+      - cr-calculator
+  /user:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with name and email
+      parameters:
+      - description: User creation request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UserCreationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/ent.User'
+        "400":
+          description: Bad request - user couldn't be created
+          schema:
+            type: string
+      summary: Create a new user
+      tags:
+      - users
+swagger: "2.0"
