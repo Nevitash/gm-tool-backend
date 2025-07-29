@@ -18,8 +18,8 @@ func (User) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New).
 			StorageKey("id"),
-		field.String("name"),
-		field.String("email"),
+		field.String("name").Unique().NotEmpty(),
+		field.String("email").Unique().NotEmpty(),
 		field.Bool("verified").Default(false),
 	}
 }

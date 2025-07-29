@@ -1,10 +1,13 @@
 package routes
 
 import (
+	"gm-tool-backend/internal/handlers"
+
 	"github.com/labstack/echo/v4"
 )
 
 func SetupRoutes(echoInstance *echo.Echo) {
+	SetupUserRoutes(echoInstance)
 	// Encounter routes
 	// echoInstance.GET("/encounters", handlers.GetEncounters(client))
 	// echoInstance.POST("/encounters", handlers.CreateEncounter(client))
@@ -23,4 +26,8 @@ func SetupRoutes(echoInstance *echo.Echo) {
 	// echoInstance.POST("/encounters/:id/combatants", handlers.AddCombatantToEncounter(client))
 	// echoInstance.DELETE("/encounters/:encounter_id/combatants/:combatant_id", handlers.RemoveCombatantFromEncounter(client))
 	// echoInstance.GET("/encounters/:id/combatants", handlers.GetEncounterCombatants(client))
+}
+
+func SetupUserRoutes(echoInstance *echo.Echo) {
+	echoInstance.POST("/user", handlers.PostUser)
 }
