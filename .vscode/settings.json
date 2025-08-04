@@ -1,3 +1,29 @@
 {
-    "remote.autoForwardPortsFallback": 0
+    "remote.autoForwardPortsFallback": 0,
+    "folder-color.pathColors": [
+        {
+            "folderPath": "gm-tool-backend/tests/",
+            "color": "foldercolorizer.color_660033"
+        },
+        {
+            "folderPath": "gm-tool-backend/internal/",
+            "color": "foldercolorizer.color_0066ff"
+        },
+        {
+            "folderPath": "gm-tool-backend/ent/",
+            "color": "foldercolorizer.color_880000"
+        },
+        {
+            "folderPath": "gm-tool-backend/docs/",
+            "color": "foldercolorizer.color_880000"
+        },
+        {
+            "folderPath": "gm-tool-backend/cmd/main.go/",
+            "color": "foldercolorizer.color_00cc00"
+        },
+        {
+            "folderPath": "gm-tool-backend/ent/schema/",
+            "color": "foldercolorizer.color_0066ff"
+        }
+    ]
 }

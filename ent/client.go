@@ -11,7 +11,10 @@ import (
 
 	"gm-tool-backend/ent/migrate"
 
+	"gm-tool-backend/ent/challangerating"
 	"gm-tool-backend/ent/combatant"
+	"gm-tool-backend/ent/crspellslot"
+	"gm-tool-backend/ent/crstat"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
 	"gm-tool-backend/ent/user"
@@ -28,8 +31,14 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// ChallangeRating is the client for interacting with the ChallangeRating builders.
+	ChallangeRating *ChallangeRatingClient
 	// Combatant is the client for interacting with the Combatant builders.
 	Combatant *CombatantClient
+	// CrSpellSlot is the client for interacting with the CrSpellSlot builders.
+	CrSpellSlot *CrSpellSlotClient
+	// CrStat is the client for interacting with the CrStat builders.
+	CrStat *CrStatClient
 	// Encounter is the client for interacting with the Encounter builders.
 	Encounter *EncounterClient
 	// EncounterCombatant is the client for interacting with the EncounterCombatant builders.
@@ -47,7 +56,10 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.ChallangeRating = NewChallangeRatingClient(c.config)
 	c.Combatant = NewCombatantClient(c.config)
+	c.CrSpellSlot = NewCrSpellSlotClient(c.config)
+	c.CrStat = NewCrStatClient(c.config)
 	c.Encounter = NewEncounterClient(c.config)
 	c.EncounterCombatant = NewEncounterCombatantClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -143,7 +155,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                ctx,
 		config:             cfg,
+		ChallangeRating:    NewChallangeRatingClient(cfg),
 		Combatant:          NewCombatantClient(cfg),
+		CrSpellSlot:        NewCrSpellSlotClient(cfg),
+		CrStat:             NewCrStatClient(cfg),
 		Encounter:          NewEncounterClient(cfg),
 		EncounterCombatant: NewEncounterCombatantClient(cfg),
 		User:               NewUserClient(cfg),
@@ -166,7 +181,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                ctx,
 		config:             cfg,
+		ChallangeRating:    NewChallangeRatingClient(cfg),
 		Combatant:          NewCombatantClient(cfg),
+		CrSpellSlot:        NewCrSpellSlotClient(cfg),
+		CrStat:             NewCrStatClient(cfg),
 		Encounter:          NewEncounterClient(cfg),
 		EncounterCombatant: NewEncounterCombatantClient(cfg),
 		User:               NewUserClient(cfg),
@@ -176,7 +194,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Combatant.
+//		ChallangeRating.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -198,26 +216,36 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Combatant.Use(hooks...)
-	c.Encounter.Use(hooks...)
-	c.EncounterCombatant.Use(hooks...)
-	c.User.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.ChallangeRating, c.Combatant, c.CrSpellSlot, c.CrStat, c.Encounter,
+		c.EncounterCombatant, c.User,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.Combatant.Intercept(interceptors...)
-	c.Encounter.Intercept(interceptors...)
-	c.EncounterCombatant.Intercept(interceptors...)
-	c.User.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.ChallangeRating, c.Combatant, c.CrSpellSlot, c.CrStat, c.Encounter,
+		c.EncounterCombatant, c.User,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *ChallangeRatingMutation:
+		return c.ChallangeRating.mutate(ctx, m)
 	case *CombatantMutation:
 		return c.Combatant.mutate(ctx, m)
+	case *CrSpellSlotMutation:
+		return c.CrSpellSlot.mutate(ctx, m)
+	case *CrStatMutation:
+		return c.CrStat.mutate(ctx, m)
 	case *EncounterMutation:
 		return c.Encounter.mutate(ctx, m)
 	case *EncounterCombatantMutation:
@@ -226,6 +254,171 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// ChallangeRatingClient is a client for the ChallangeRating schema.
+type ChallangeRatingClient struct {
+	config
+}
+
+// NewChallangeRatingClient returns a client for the ChallangeRating from the given config.
+func NewChallangeRatingClient(c config) *ChallangeRatingClient {
+	return &ChallangeRatingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `challangerating.Hooks(f(g(h())))`.
+func (c *ChallangeRatingClient) Use(hooks ...Hook) {
+	c.hooks.ChallangeRating = append(c.hooks.ChallangeRating, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `challangerating.Intercept(f(g(h())))`.
+func (c *ChallangeRatingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ChallangeRating = append(c.inters.ChallangeRating, interceptors...)
+}
+
+// Create returns a builder for creating a ChallangeRating entity.
+func (c *ChallangeRatingClient) Create() *ChallangeRatingCreate {
+	mutation := newChallangeRatingMutation(c.config, OpCreate)
+	return &ChallangeRatingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ChallangeRating entities.
+func (c *ChallangeRatingClient) CreateBulk(builders ...*ChallangeRatingCreate) *ChallangeRatingCreateBulk {
+	return &ChallangeRatingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ChallangeRatingClient) MapCreateBulk(slice any, setFunc func(*ChallangeRatingCreate, int)) *ChallangeRatingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ChallangeRatingCreateBulk{err: fmt.Errorf("calling to ChallangeRatingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ChallangeRatingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ChallangeRatingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ChallangeRating.
+func (c *ChallangeRatingClient) Update() *ChallangeRatingUpdate {
+	mutation := newChallangeRatingMutation(c.config, OpUpdate)
+	return &ChallangeRatingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ChallangeRatingClient) UpdateOne(cr *ChallangeRating) *ChallangeRatingUpdateOne {
+	mutation := newChallangeRatingMutation(c.config, OpUpdateOne, withChallangeRating(cr))
+	return &ChallangeRatingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ChallangeRatingClient) UpdateOneID(id uuid.UUID) *ChallangeRatingUpdateOne {
+	mutation := newChallangeRatingMutation(c.config, OpUpdateOne, withChallangeRatingID(id))
+	return &ChallangeRatingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ChallangeRating.
+func (c *ChallangeRatingClient) Delete() *ChallangeRatingDelete {
+	mutation := newChallangeRatingMutation(c.config, OpDelete)
+	return &ChallangeRatingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ChallangeRatingClient) DeleteOne(cr *ChallangeRating) *ChallangeRatingDeleteOne {
+	return c.DeleteOneID(cr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ChallangeRatingClient) DeleteOneID(id uuid.UUID) *ChallangeRatingDeleteOne {
+	builder := c.Delete().Where(challangerating.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ChallangeRatingDeleteOne{builder}
+}
+
+// Query returns a query builder for ChallangeRating.
+func (c *ChallangeRatingClient) Query() *ChallangeRatingQuery {
+	return &ChallangeRatingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeChallangeRating},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ChallangeRating entity by its id.
+func (c *ChallangeRatingClient) Get(ctx context.Context, id uuid.UUID) (*ChallangeRating, error) {
+	return c.Query().Where(challangerating.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ChallangeRatingClient) GetX(ctx context.Context, id uuid.UUID) *ChallangeRating {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySpellSlots queries the spell_slots edge of a ChallangeRating.
+func (c *ChallangeRatingClient) QuerySpellSlots(cr *ChallangeRating) *CrSpellSlotQuery {
+	query := (&CrSpellSlotClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := cr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(challangerating.Table, challangerating.FieldID, id),
+			sqlgraph.To(crspellslot.Table, crspellslot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, challangerating.SpellSlotsTable, challangerating.SpellSlotsColumn),
+		)
+		fromV = sqlgraph.Neighbors(cr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStats queries the stats edge of a ChallangeRating.
+func (c *ChallangeRatingClient) QueryStats(cr *ChallangeRating) *CrStatQuery {
+	query := (&CrStatClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := cr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(challangerating.Table, challangerating.FieldID, id),
+			sqlgraph.To(crstat.Table, crstat.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, challangerating.StatsTable, challangerating.StatsColumn),
+		)
+		fromV = sqlgraph.Neighbors(cr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ChallangeRatingClient) Hooks() []Hook {
+	return c.hooks.ChallangeRating
+}
+
+// Interceptors returns the client interceptors.
+func (c *ChallangeRatingClient) Interceptors() []Interceptor {
+	return c.inters.ChallangeRating
+}
+
+func (c *ChallangeRatingClient) mutate(ctx context.Context, m *ChallangeRatingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ChallangeRatingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ChallangeRatingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ChallangeRatingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ChallangeRatingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ChallangeRating mutation op: %q", m.Op())
 	}
 }
 
@@ -375,6 +568,304 @@ func (c *CombatantClient) mutate(ctx context.Context, m *CombatantMutation) (Val
 		return (&CombatantDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Combatant mutation op: %q", m.Op())
+	}
+}
+
+// CrSpellSlotClient is a client for the CrSpellSlot schema.
+type CrSpellSlotClient struct {
+	config
+}
+
+// NewCrSpellSlotClient returns a client for the CrSpellSlot from the given config.
+func NewCrSpellSlotClient(c config) *CrSpellSlotClient {
+	return &CrSpellSlotClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `crspellslot.Hooks(f(g(h())))`.
+func (c *CrSpellSlotClient) Use(hooks ...Hook) {
+	c.hooks.CrSpellSlot = append(c.hooks.CrSpellSlot, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `crspellslot.Intercept(f(g(h())))`.
+func (c *CrSpellSlotClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CrSpellSlot = append(c.inters.CrSpellSlot, interceptors...)
+}
+
+// Create returns a builder for creating a CrSpellSlot entity.
+func (c *CrSpellSlotClient) Create() *CrSpellSlotCreate {
+	mutation := newCrSpellSlotMutation(c.config, OpCreate)
+	return &CrSpellSlotCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CrSpellSlot entities.
+func (c *CrSpellSlotClient) CreateBulk(builders ...*CrSpellSlotCreate) *CrSpellSlotCreateBulk {
+	return &CrSpellSlotCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CrSpellSlotClient) MapCreateBulk(slice any, setFunc func(*CrSpellSlotCreate, int)) *CrSpellSlotCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CrSpellSlotCreateBulk{err: fmt.Errorf("calling to CrSpellSlotClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CrSpellSlotCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CrSpellSlotCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CrSpellSlot.
+func (c *CrSpellSlotClient) Update() *CrSpellSlotUpdate {
+	mutation := newCrSpellSlotMutation(c.config, OpUpdate)
+	return &CrSpellSlotUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CrSpellSlotClient) UpdateOne(css *CrSpellSlot) *CrSpellSlotUpdateOne {
+	mutation := newCrSpellSlotMutation(c.config, OpUpdateOne, withCrSpellSlot(css))
+	return &CrSpellSlotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CrSpellSlotClient) UpdateOneID(id uuid.UUID) *CrSpellSlotUpdateOne {
+	mutation := newCrSpellSlotMutation(c.config, OpUpdateOne, withCrSpellSlotID(id))
+	return &CrSpellSlotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CrSpellSlot.
+func (c *CrSpellSlotClient) Delete() *CrSpellSlotDelete {
+	mutation := newCrSpellSlotMutation(c.config, OpDelete)
+	return &CrSpellSlotDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CrSpellSlotClient) DeleteOne(css *CrSpellSlot) *CrSpellSlotDeleteOne {
+	return c.DeleteOneID(css.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CrSpellSlotClient) DeleteOneID(id uuid.UUID) *CrSpellSlotDeleteOne {
+	builder := c.Delete().Where(crspellslot.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CrSpellSlotDeleteOne{builder}
+}
+
+// Query returns a query builder for CrSpellSlot.
+func (c *CrSpellSlotClient) Query() *CrSpellSlotQuery {
+	return &CrSpellSlotQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCrSpellSlot},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CrSpellSlot entity by its id.
+func (c *CrSpellSlotClient) Get(ctx context.Context, id uuid.UUID) (*CrSpellSlot, error) {
+	return c.Query().Where(crspellslot.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CrSpellSlotClient) GetX(ctx context.Context, id uuid.UUID) *CrSpellSlot {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCr queries the cr edge of a CrSpellSlot.
+func (c *CrSpellSlotClient) QueryCr(css *CrSpellSlot) *ChallangeRatingQuery {
+	query := (&ChallangeRatingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := css.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(crspellslot.Table, crspellslot.FieldID, id),
+			sqlgraph.To(challangerating.Table, challangerating.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, crspellslot.CrTable, crspellslot.CrColumn),
+		)
+		fromV = sqlgraph.Neighbors(css.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CrSpellSlotClient) Hooks() []Hook {
+	return c.hooks.CrSpellSlot
+}
+
+// Interceptors returns the client interceptors.
+func (c *CrSpellSlotClient) Interceptors() []Interceptor {
+	return c.inters.CrSpellSlot
+}
+
+func (c *CrSpellSlotClient) mutate(ctx context.Context, m *CrSpellSlotMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CrSpellSlotCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CrSpellSlotUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CrSpellSlotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CrSpellSlotDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CrSpellSlot mutation op: %q", m.Op())
+	}
+}
+
+// CrStatClient is a client for the CrStat schema.
+type CrStatClient struct {
+	config
+}
+
+// NewCrStatClient returns a client for the CrStat from the given config.
+func NewCrStatClient(c config) *CrStatClient {
+	return &CrStatClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `crstat.Hooks(f(g(h())))`.
+func (c *CrStatClient) Use(hooks ...Hook) {
+	c.hooks.CrStat = append(c.hooks.CrStat, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `crstat.Intercept(f(g(h())))`.
+func (c *CrStatClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CrStat = append(c.inters.CrStat, interceptors...)
+}
+
+// Create returns a builder for creating a CrStat entity.
+func (c *CrStatClient) Create() *CrStatCreate {
+	mutation := newCrStatMutation(c.config, OpCreate)
+	return &CrStatCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CrStat entities.
+func (c *CrStatClient) CreateBulk(builders ...*CrStatCreate) *CrStatCreateBulk {
+	return &CrStatCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CrStatClient) MapCreateBulk(slice any, setFunc func(*CrStatCreate, int)) *CrStatCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CrStatCreateBulk{err: fmt.Errorf("calling to CrStatClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CrStatCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CrStatCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CrStat.
+func (c *CrStatClient) Update() *CrStatUpdate {
+	mutation := newCrStatMutation(c.config, OpUpdate)
+	return &CrStatUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CrStatClient) UpdateOne(cs *CrStat) *CrStatUpdateOne {
+	mutation := newCrStatMutation(c.config, OpUpdateOne, withCrStat(cs))
+	return &CrStatUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CrStatClient) UpdateOneID(id uuid.UUID) *CrStatUpdateOne {
+	mutation := newCrStatMutation(c.config, OpUpdateOne, withCrStatID(id))
+	return &CrStatUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CrStat.
+func (c *CrStatClient) Delete() *CrStatDelete {
+	mutation := newCrStatMutation(c.config, OpDelete)
+	return &CrStatDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CrStatClient) DeleteOne(cs *CrStat) *CrStatDeleteOne {
+	return c.DeleteOneID(cs.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CrStatClient) DeleteOneID(id uuid.UUID) *CrStatDeleteOne {
+	builder := c.Delete().Where(crstat.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CrStatDeleteOne{builder}
+}
+
+// Query returns a query builder for CrStat.
+func (c *CrStatClient) Query() *CrStatQuery {
+	return &CrStatQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCrStat},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CrStat entity by its id.
+func (c *CrStatClient) Get(ctx context.Context, id uuid.UUID) (*CrStat, error) {
+	return c.Query().Where(crstat.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CrStatClient) GetX(ctx context.Context, id uuid.UUID) *CrStat {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCr queries the cr edge of a CrStat.
+func (c *CrStatClient) QueryCr(cs *CrStat) *ChallangeRatingQuery {
+	query := (&ChallangeRatingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := cs.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(crstat.Table, crstat.FieldID, id),
+			sqlgraph.To(challangerating.Table, challangerating.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, crstat.CrTable, crstat.CrColumn),
+		)
+		fromV = sqlgraph.Neighbors(cs.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CrStatClient) Hooks() []Hook {
+	return c.hooks.CrStat
+}
+
+// Interceptors returns the client interceptors.
+func (c *CrStatClient) Interceptors() []Interceptor {
+	return c.inters.CrStat
+}
+
+func (c *CrStatClient) mutate(ctx context.Context, m *CrStatMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CrStatCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CrStatUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CrStatUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CrStatDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CrStat mutation op: %q", m.Op())
 	}
 }
 
@@ -844,9 +1335,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Combatant, Encounter, EncounterCombatant, User []ent.Hook
+		ChallangeRating, Combatant, CrSpellSlot, CrStat, Encounter, EncounterCombatant,
+		User []ent.Hook
 	}
 	inters struct {
-		Combatant, Encounter, EncounterCombatant, User []ent.Interceptor
+		ChallangeRating, Combatant, CrSpellSlot, CrStat, Encounter, EncounterCombatant,
+		User []ent.Interceptor
 	}
 )

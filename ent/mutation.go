@@ -6,7 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gm-tool-backend/ent/challangerating"
 	"gm-tool-backend/ent/combatant"
+	"gm-tool-backend/ent/crspellslot"
+	"gm-tool-backend/ent/crstat"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
 	"gm-tool-backend/ent/predicate"
@@ -27,11 +30,498 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeChallangeRating    = "ChallangeRating"
 	TypeCombatant          = "Combatant"
+	TypeCrSpellSlot        = "CrSpellSlot"
+	TypeCrStat             = "CrStat"
 	TypeEncounter          = "Encounter"
 	TypeEncounterCombatant = "EncounterCombatant"
 	TypeUser               = "User"
 )
+
+// ChallangeRatingMutation represents an operation that mutates the ChallangeRating nodes in the graph.
+type ChallangeRatingMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	cr                 *string
+	clearedFields      map[string]struct{}
+	spell_slots        map[uuid.UUID]struct{}
+	removedspell_slots map[uuid.UUID]struct{}
+	clearedspell_slots bool
+	stats              *uuid.UUID
+	clearedstats       bool
+	done               bool
+	oldValue           func(context.Context) (*ChallangeRating, error)
+	predicates         []predicate.ChallangeRating
+}
+
+var _ ent.Mutation = (*ChallangeRatingMutation)(nil)
+
+// challangeratingOption allows management of the mutation configuration using functional options.
+type challangeratingOption func(*ChallangeRatingMutation)
+
+// newChallangeRatingMutation creates new mutation for the ChallangeRating entity.
+func newChallangeRatingMutation(c config, op Op, opts ...challangeratingOption) *ChallangeRatingMutation {
+	m := &ChallangeRatingMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeChallangeRating,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withChallangeRatingID sets the ID field of the mutation.
+func withChallangeRatingID(id uuid.UUID) challangeratingOption {
+	return func(m *ChallangeRatingMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ChallangeRating
+		)
+		m.oldValue = func(ctx context.Context) (*ChallangeRating, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ChallangeRating.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withChallangeRating sets the old ChallangeRating of the mutation.
+func withChallangeRating(node *ChallangeRating) challangeratingOption {
+	return func(m *ChallangeRatingMutation) {
+		m.oldValue = func(context.Context) (*ChallangeRating, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ChallangeRatingMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ChallangeRatingMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ChallangeRating entities.
+func (m *ChallangeRatingMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ChallangeRatingMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ChallangeRatingMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ChallangeRating.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCr sets the "cr" field.
+func (m *ChallangeRatingMutation) SetCr(s string) {
+	m.cr = &s
+}
+
+// Cr returns the value of the "cr" field in the mutation.
+func (m *ChallangeRatingMutation) Cr() (r string, exists bool) {
+	v := m.cr
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCr returns the old "cr" field's value of the ChallangeRating entity.
+// If the ChallangeRating object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ChallangeRatingMutation) OldCr(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCr is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCr requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCr: %w", err)
+	}
+	return oldValue.Cr, nil
+}
+
+// ResetCr resets all changes to the "cr" field.
+func (m *ChallangeRatingMutation) ResetCr() {
+	m.cr = nil
+}
+
+// AddSpellSlotIDs adds the "spell_slots" edge to the CrSpellSlot entity by ids.
+func (m *ChallangeRatingMutation) AddSpellSlotIDs(ids ...uuid.UUID) {
+	if m.spell_slots == nil {
+		m.spell_slots = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.spell_slots[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSpellSlots clears the "spell_slots" edge to the CrSpellSlot entity.
+func (m *ChallangeRatingMutation) ClearSpellSlots() {
+	m.clearedspell_slots = true
+}
+
+// SpellSlotsCleared reports if the "spell_slots" edge to the CrSpellSlot entity was cleared.
+func (m *ChallangeRatingMutation) SpellSlotsCleared() bool {
+	return m.clearedspell_slots
+}
+
+// RemoveSpellSlotIDs removes the "spell_slots" edge to the CrSpellSlot entity by IDs.
+func (m *ChallangeRatingMutation) RemoveSpellSlotIDs(ids ...uuid.UUID) {
+	if m.removedspell_slots == nil {
+		m.removedspell_slots = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.spell_slots, ids[i])
+		m.removedspell_slots[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSpellSlots returns the removed IDs of the "spell_slots" edge to the CrSpellSlot entity.
+func (m *ChallangeRatingMutation) RemovedSpellSlotsIDs() (ids []uuid.UUID) {
+	for id := range m.removedspell_slots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SpellSlotsIDs returns the "spell_slots" edge IDs in the mutation.
+func (m *ChallangeRatingMutation) SpellSlotsIDs() (ids []uuid.UUID) {
+	for id := range m.spell_slots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSpellSlots resets all changes to the "spell_slots" edge.
+func (m *ChallangeRatingMutation) ResetSpellSlots() {
+	m.spell_slots = nil
+	m.clearedspell_slots = false
+	m.removedspell_slots = nil
+}
+
+// SetStatsID sets the "stats" edge to the CrStat entity by id.
+func (m *ChallangeRatingMutation) SetStatsID(id uuid.UUID) {
+	m.stats = &id
+}
+
+// ClearStats clears the "stats" edge to the CrStat entity.
+func (m *ChallangeRatingMutation) ClearStats() {
+	m.clearedstats = true
+}
+
+// StatsCleared reports if the "stats" edge to the CrStat entity was cleared.
+func (m *ChallangeRatingMutation) StatsCleared() bool {
+	return m.clearedstats
+}
+
+// StatsID returns the "stats" edge ID in the mutation.
+func (m *ChallangeRatingMutation) StatsID() (id uuid.UUID, exists bool) {
+	if m.stats != nil {
+		return *m.stats, true
+	}
+	return
+}
+
+// StatsIDs returns the "stats" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// StatsID instead. It exists only for internal usage by the builders.
+func (m *ChallangeRatingMutation) StatsIDs() (ids []uuid.UUID) {
+	if id := m.stats; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStats resets all changes to the "stats" edge.
+func (m *ChallangeRatingMutation) ResetStats() {
+	m.stats = nil
+	m.clearedstats = false
+}
+
+// Where appends a list predicates to the ChallangeRatingMutation builder.
+func (m *ChallangeRatingMutation) Where(ps ...predicate.ChallangeRating) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ChallangeRatingMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ChallangeRatingMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ChallangeRating, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ChallangeRatingMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ChallangeRatingMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ChallangeRating).
+func (m *ChallangeRatingMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ChallangeRatingMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.cr != nil {
+		fields = append(fields, challangerating.FieldCr)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ChallangeRatingMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case challangerating.FieldCr:
+		return m.Cr()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ChallangeRatingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case challangerating.FieldCr:
+		return m.OldCr(ctx)
+	}
+	return nil, fmt.Errorf("unknown ChallangeRating field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ChallangeRatingMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case challangerating.FieldCr:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCr(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ChallangeRating field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ChallangeRatingMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ChallangeRatingMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ChallangeRatingMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ChallangeRating numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ChallangeRatingMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ChallangeRatingMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ChallangeRatingMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ChallangeRating nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ChallangeRatingMutation) ResetField(name string) error {
+	switch name {
+	case challangerating.FieldCr:
+		m.ResetCr()
+		return nil
+	}
+	return fmt.Errorf("unknown ChallangeRating field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ChallangeRatingMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.spell_slots != nil {
+		edges = append(edges, challangerating.EdgeSpellSlots)
+	}
+	if m.stats != nil {
+		edges = append(edges, challangerating.EdgeStats)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ChallangeRatingMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case challangerating.EdgeSpellSlots:
+		ids := make([]ent.Value, 0, len(m.spell_slots))
+		for id := range m.spell_slots {
+			ids = append(ids, id)
+		}
+		return ids
+	case challangerating.EdgeStats:
+		if id := m.stats; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ChallangeRatingMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedspell_slots != nil {
+		edges = append(edges, challangerating.EdgeSpellSlots)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ChallangeRatingMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case challangerating.EdgeSpellSlots:
+		ids := make([]ent.Value, 0, len(m.removedspell_slots))
+		for id := range m.removedspell_slots {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ChallangeRatingMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedspell_slots {
+		edges = append(edges, challangerating.EdgeSpellSlots)
+	}
+	if m.clearedstats {
+		edges = append(edges, challangerating.EdgeStats)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ChallangeRatingMutation) EdgeCleared(name string) bool {
+	switch name {
+	case challangerating.EdgeSpellSlots:
+		return m.clearedspell_slots
+	case challangerating.EdgeStats:
+		return m.clearedstats
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ChallangeRatingMutation) ClearEdge(name string) error {
+	switch name {
+	case challangerating.EdgeStats:
+		m.ClearStats()
+		return nil
+	}
+	return fmt.Errorf("unknown ChallangeRating unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ChallangeRatingMutation) ResetEdge(name string) error {
+	switch name {
+	case challangerating.EdgeSpellSlots:
+		m.ResetSpellSlots()
+		return nil
+	case challangerating.EdgeStats:
+		m.ResetStats()
+		return nil
+	}
+	return fmt.Errorf("unknown ChallangeRating edge %s", name)
+}
 
 // CombatantMutation represents an operation that mutates the Combatant nodes in the graph.
 type CombatantMutation struct {
@@ -1143,6 +1633,1311 @@ func (m *CombatantMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Combatant edge %s", name)
+}
+
+// CrSpellSlotMutation represents an operation that mutates the CrSpellSlot nodes in the graph.
+type CrSpellSlotMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	level         *int
+	addlevel      *int
+	amount        *int
+	addamount     *int
+	clearedFields map[string]struct{}
+	cr            *uuid.UUID
+	clearedcr     bool
+	done          bool
+	oldValue      func(context.Context) (*CrSpellSlot, error)
+	predicates    []predicate.CrSpellSlot
+}
+
+var _ ent.Mutation = (*CrSpellSlotMutation)(nil)
+
+// crspellslotOption allows management of the mutation configuration using functional options.
+type crspellslotOption func(*CrSpellSlotMutation)
+
+// newCrSpellSlotMutation creates new mutation for the CrSpellSlot entity.
+func newCrSpellSlotMutation(c config, op Op, opts ...crspellslotOption) *CrSpellSlotMutation {
+	m := &CrSpellSlotMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCrSpellSlot,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCrSpellSlotID sets the ID field of the mutation.
+func withCrSpellSlotID(id uuid.UUID) crspellslotOption {
+	return func(m *CrSpellSlotMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CrSpellSlot
+		)
+		m.oldValue = func(ctx context.Context) (*CrSpellSlot, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CrSpellSlot.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCrSpellSlot sets the old CrSpellSlot of the mutation.
+func withCrSpellSlot(node *CrSpellSlot) crspellslotOption {
+	return func(m *CrSpellSlotMutation) {
+		m.oldValue = func(context.Context) (*CrSpellSlot, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CrSpellSlotMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CrSpellSlotMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of CrSpellSlot entities.
+func (m *CrSpellSlotMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CrSpellSlotMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CrSpellSlotMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CrSpellSlot.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetLevel sets the "level" field.
+func (m *CrSpellSlotMutation) SetLevel(i int) {
+	m.level = &i
+	m.addlevel = nil
+}
+
+// Level returns the value of the "level" field in the mutation.
+func (m *CrSpellSlotMutation) Level() (r int, exists bool) {
+	v := m.level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLevel returns the old "level" field's value of the CrSpellSlot entity.
+// If the CrSpellSlot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CrSpellSlotMutation) OldLevel(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLevel: %w", err)
+	}
+	return oldValue.Level, nil
+}
+
+// AddLevel adds i to the "level" field.
+func (m *CrSpellSlotMutation) AddLevel(i int) {
+	if m.addlevel != nil {
+		*m.addlevel += i
+	} else {
+		m.addlevel = &i
+	}
+}
+
+// AddedLevel returns the value that was added to the "level" field in this mutation.
+func (m *CrSpellSlotMutation) AddedLevel() (r int, exists bool) {
+	v := m.addlevel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLevel resets all changes to the "level" field.
+func (m *CrSpellSlotMutation) ResetLevel() {
+	m.level = nil
+	m.addlevel = nil
+}
+
+// SetAmount sets the "amount" field.
+func (m *CrSpellSlotMutation) SetAmount(i int) {
+	m.amount = &i
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *CrSpellSlotMutation) Amount() (r int, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the CrSpellSlot entity.
+// If the CrSpellSlot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CrSpellSlotMutation) OldAmount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds i to the "amount" field.
+func (m *CrSpellSlotMutation) AddAmount(i int) {
+	if m.addamount != nil {
+		*m.addamount += i
+	} else {
+		m.addamount = &i
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *CrSpellSlotMutation) AddedAmount() (r int, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *CrSpellSlotMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetCrID sets the "cr" edge to the ChallangeRating entity by id.
+func (m *CrSpellSlotMutation) SetCrID(id uuid.UUID) {
+	m.cr = &id
+}
+
+// ClearCr clears the "cr" edge to the ChallangeRating entity.
+func (m *CrSpellSlotMutation) ClearCr() {
+	m.clearedcr = true
+}
+
+// CrCleared reports if the "cr" edge to the ChallangeRating entity was cleared.
+func (m *CrSpellSlotMutation) CrCleared() bool {
+	return m.clearedcr
+}
+
+// CrID returns the "cr" edge ID in the mutation.
+func (m *CrSpellSlotMutation) CrID() (id uuid.UUID, exists bool) {
+	if m.cr != nil {
+		return *m.cr, true
+	}
+	return
+}
+
+// CrIDs returns the "cr" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CrID instead. It exists only for internal usage by the builders.
+func (m *CrSpellSlotMutation) CrIDs() (ids []uuid.UUID) {
+	if id := m.cr; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCr resets all changes to the "cr" edge.
+func (m *CrSpellSlotMutation) ResetCr() {
+	m.cr = nil
+	m.clearedcr = false
+}
+
+// Where appends a list predicates to the CrSpellSlotMutation builder.
+func (m *CrSpellSlotMutation) Where(ps ...predicate.CrSpellSlot) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CrSpellSlotMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CrSpellSlotMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CrSpellSlot, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CrSpellSlotMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CrSpellSlotMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CrSpellSlot).
+func (m *CrSpellSlotMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CrSpellSlotMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.level != nil {
+		fields = append(fields, crspellslot.FieldLevel)
+	}
+	if m.amount != nil {
+		fields = append(fields, crspellslot.FieldAmount)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CrSpellSlotMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case crspellslot.FieldLevel:
+		return m.Level()
+	case crspellslot.FieldAmount:
+		return m.Amount()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CrSpellSlotMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case crspellslot.FieldLevel:
+		return m.OldLevel(ctx)
+	case crspellslot.FieldAmount:
+		return m.OldAmount(ctx)
+	}
+	return nil, fmt.Errorf("unknown CrSpellSlot field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CrSpellSlotMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case crspellslot.FieldLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLevel(v)
+		return nil
+	case crspellslot.FieldAmount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CrSpellSlot field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CrSpellSlotMutation) AddedFields() []string {
+	var fields []string
+	if m.addlevel != nil {
+		fields = append(fields, crspellslot.FieldLevel)
+	}
+	if m.addamount != nil {
+		fields = append(fields, crspellslot.FieldAmount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CrSpellSlotMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case crspellslot.FieldLevel:
+		return m.AddedLevel()
+	case crspellslot.FieldAmount:
+		return m.AddedAmount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CrSpellSlotMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case crspellslot.FieldLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLevel(v)
+		return nil
+	case crspellslot.FieldAmount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CrSpellSlot numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CrSpellSlotMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CrSpellSlotMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CrSpellSlotMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CrSpellSlot nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CrSpellSlotMutation) ResetField(name string) error {
+	switch name {
+	case crspellslot.FieldLevel:
+		m.ResetLevel()
+		return nil
+	case crspellslot.FieldAmount:
+		m.ResetAmount()
+		return nil
+	}
+	return fmt.Errorf("unknown CrSpellSlot field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CrSpellSlotMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cr != nil {
+		edges = append(edges, crspellslot.EdgeCr)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CrSpellSlotMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case crspellslot.EdgeCr:
+		if id := m.cr; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CrSpellSlotMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CrSpellSlotMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CrSpellSlotMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedcr {
+		edges = append(edges, crspellslot.EdgeCr)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CrSpellSlotMutation) EdgeCleared(name string) bool {
+	switch name {
+	case crspellslot.EdgeCr:
+		return m.clearedcr
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CrSpellSlotMutation) ClearEdge(name string) error {
+	switch name {
+	case crspellslot.EdgeCr:
+		m.ClearCr()
+		return nil
+	}
+	return fmt.Errorf("unknown CrSpellSlot unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CrSpellSlotMutation) ResetEdge(name string) error {
+	switch name {
+	case crspellslot.EdgeCr:
+		m.ResetCr()
+		return nil
+	}
+	return fmt.Errorf("unknown CrSpellSlot edge %s", name)
+}
+
+// CrStatMutation represents an operation that mutates the CrStat nodes in the graph.
+type CrStatMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	ac                *int
+	addac             *int
+	hp                *int
+	addhp             *int
+	attackModifier    *int
+	addattackModifier *int
+	avarageDamage     *int
+	addavarageDamage  *int
+	dc                *int
+	adddc             *int
+	clearedFields     map[string]struct{}
+	cr                *uuid.UUID
+	clearedcr         bool
+	done              bool
+	oldValue          func(context.Context) (*CrStat, error)
+	predicates        []predicate.CrStat
+}
+
+var _ ent.Mutation = (*CrStatMutation)(nil)
+
+// crstatOption allows management of the mutation configuration using functional options.
+type crstatOption func(*CrStatMutation)
+
+// newCrStatMutation creates new mutation for the CrStat entity.
+func newCrStatMutation(c config, op Op, opts ...crstatOption) *CrStatMutation {
+	m := &CrStatMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCrStat,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCrStatID sets the ID field of the mutation.
+func withCrStatID(id uuid.UUID) crstatOption {
+	return func(m *CrStatMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CrStat
+		)
+		m.oldValue = func(ctx context.Context) (*CrStat, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CrStat.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCrStat sets the old CrStat of the mutation.
+func withCrStat(node *CrStat) crstatOption {
+	return func(m *CrStatMutation) {
+		m.oldValue = func(context.Context) (*CrStat, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CrStatMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CrStatMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of CrStat entities.
+func (m *CrStatMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CrStatMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CrStatMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CrStat.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetAc sets the "ac" field.
+func (m *CrStatMutation) SetAc(i int) {
+	m.ac = &i
+	m.addac = nil
+}
+
+// Ac returns the value of the "ac" field in the mutation.
+func (m *CrStatMutation) Ac() (r int, exists bool) {
+	v := m.ac
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAc returns the old "ac" field's value of the CrStat entity.
+// If the CrStat object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CrStatMutation) OldAc(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAc: %w", err)
+	}
+	return oldValue.Ac, nil
+}
+
+// AddAc adds i to the "ac" field.
+func (m *CrStatMutation) AddAc(i int) {
+	if m.addac != nil {
+		*m.addac += i
+	} else {
+		m.addac = &i
+	}
+}
+
+// AddedAc returns the value that was added to the "ac" field in this mutation.
+func (m *CrStatMutation) AddedAc() (r int, exists bool) {
+	v := m.addac
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAc resets all changes to the "ac" field.
+func (m *CrStatMutation) ResetAc() {
+	m.ac = nil
+	m.addac = nil
+}
+
+// SetHp sets the "hp" field.
+func (m *CrStatMutation) SetHp(i int) {
+	m.hp = &i
+	m.addhp = nil
+}
+
+// Hp returns the value of the "hp" field in the mutation.
+func (m *CrStatMutation) Hp() (r int, exists bool) {
+	v := m.hp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHp returns the old "hp" field's value of the CrStat entity.
+// If the CrStat object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CrStatMutation) OldHp(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHp is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHp requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHp: %w", err)
+	}
+	return oldValue.Hp, nil
+}
+
+// AddHp adds i to the "hp" field.
+func (m *CrStatMutation) AddHp(i int) {
+	if m.addhp != nil {
+		*m.addhp += i
+	} else {
+		m.addhp = &i
+	}
+}
+
+// AddedHp returns the value that was added to the "hp" field in this mutation.
+func (m *CrStatMutation) AddedHp() (r int, exists bool) {
+	v := m.addhp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetHp resets all changes to the "hp" field.
+func (m *CrStatMutation) ResetHp() {
+	m.hp = nil
+	m.addhp = nil
+}
+
+// SetAttackModifier sets the "attackModifier" field.
+func (m *CrStatMutation) SetAttackModifier(i int) {
+	m.attackModifier = &i
+	m.addattackModifier = nil
+}
+
+// AttackModifier returns the value of the "attackModifier" field in the mutation.
+func (m *CrStatMutation) AttackModifier() (r int, exists bool) {
+	v := m.attackModifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttackModifier returns the old "attackModifier" field's value of the CrStat entity.
+// If the CrStat object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CrStatMutation) OldAttackModifier(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttackModifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttackModifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttackModifier: %w", err)
+	}
+	return oldValue.AttackModifier, nil
+}
+
+// AddAttackModifier adds i to the "attackModifier" field.
+func (m *CrStatMutation) AddAttackModifier(i int) {
+	if m.addattackModifier != nil {
+		*m.addattackModifier += i
+	} else {
+		m.addattackModifier = &i
+	}
+}
+
+// AddedAttackModifier returns the value that was added to the "attackModifier" field in this mutation.
+func (m *CrStatMutation) AddedAttackModifier() (r int, exists bool) {
+	v := m.addattackModifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAttackModifier resets all changes to the "attackModifier" field.
+func (m *CrStatMutation) ResetAttackModifier() {
+	m.attackModifier = nil
+	m.addattackModifier = nil
+}
+
+// SetAvarageDamage sets the "avarageDamage" field.
+func (m *CrStatMutation) SetAvarageDamage(i int) {
+	m.avarageDamage = &i
+	m.addavarageDamage = nil
+}
+
+// AvarageDamage returns the value of the "avarageDamage" field in the mutation.
+func (m *CrStatMutation) AvarageDamage() (r int, exists bool) {
+	v := m.avarageDamage
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAvarageDamage returns the old "avarageDamage" field's value of the CrStat entity.
+// If the CrStat object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CrStatMutation) OldAvarageDamage(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAvarageDamage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAvarageDamage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAvarageDamage: %w", err)
+	}
+	return oldValue.AvarageDamage, nil
+}
+
+// AddAvarageDamage adds i to the "avarageDamage" field.
+func (m *CrStatMutation) AddAvarageDamage(i int) {
+	if m.addavarageDamage != nil {
+		*m.addavarageDamage += i
+	} else {
+		m.addavarageDamage = &i
+	}
+}
+
+// AddedAvarageDamage returns the value that was added to the "avarageDamage" field in this mutation.
+func (m *CrStatMutation) AddedAvarageDamage() (r int, exists bool) {
+	v := m.addavarageDamage
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAvarageDamage resets all changes to the "avarageDamage" field.
+func (m *CrStatMutation) ResetAvarageDamage() {
+	m.avarageDamage = nil
+	m.addavarageDamage = nil
+}
+
+// SetDc sets the "dc" field.
+func (m *CrStatMutation) SetDc(i int) {
+	m.dc = &i
+	m.adddc = nil
+}
+
+// Dc returns the value of the "dc" field in the mutation.
+func (m *CrStatMutation) Dc() (r int, exists bool) {
+	v := m.dc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDc returns the old "dc" field's value of the CrStat entity.
+// If the CrStat object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CrStatMutation) OldDc(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDc: %w", err)
+	}
+	return oldValue.Dc, nil
+}
+
+// AddDc adds i to the "dc" field.
+func (m *CrStatMutation) AddDc(i int) {
+	if m.adddc != nil {
+		*m.adddc += i
+	} else {
+		m.adddc = &i
+	}
+}
+
+// AddedDc returns the value that was added to the "dc" field in this mutation.
+func (m *CrStatMutation) AddedDc() (r int, exists bool) {
+	v := m.adddc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDc resets all changes to the "dc" field.
+func (m *CrStatMutation) ResetDc() {
+	m.dc = nil
+	m.adddc = nil
+}
+
+// SetCrID sets the "cr" edge to the ChallangeRating entity by id.
+func (m *CrStatMutation) SetCrID(id uuid.UUID) {
+	m.cr = &id
+}
+
+// ClearCr clears the "cr" edge to the ChallangeRating entity.
+func (m *CrStatMutation) ClearCr() {
+	m.clearedcr = true
+}
+
+// CrCleared reports if the "cr" edge to the ChallangeRating entity was cleared.
+func (m *CrStatMutation) CrCleared() bool {
+	return m.clearedcr
+}
+
+// CrID returns the "cr" edge ID in the mutation.
+func (m *CrStatMutation) CrID() (id uuid.UUID, exists bool) {
+	if m.cr != nil {
+		return *m.cr, true
+	}
+	return
+}
+
+// CrIDs returns the "cr" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CrID instead. It exists only for internal usage by the builders.
+func (m *CrStatMutation) CrIDs() (ids []uuid.UUID) {
+	if id := m.cr; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCr resets all changes to the "cr" edge.
+func (m *CrStatMutation) ResetCr() {
+	m.cr = nil
+	m.clearedcr = false
+}
+
+// Where appends a list predicates to the CrStatMutation builder.
+func (m *CrStatMutation) Where(ps ...predicate.CrStat) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CrStatMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CrStatMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CrStat, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CrStatMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CrStatMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CrStat).
+func (m *CrStatMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CrStatMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.ac != nil {
+		fields = append(fields, crstat.FieldAc)
+	}
+	if m.hp != nil {
+		fields = append(fields, crstat.FieldHp)
+	}
+	if m.attackModifier != nil {
+		fields = append(fields, crstat.FieldAttackModifier)
+	}
+	if m.avarageDamage != nil {
+		fields = append(fields, crstat.FieldAvarageDamage)
+	}
+	if m.dc != nil {
+		fields = append(fields, crstat.FieldDc)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CrStatMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case crstat.FieldAc:
+		return m.Ac()
+	case crstat.FieldHp:
+		return m.Hp()
+	case crstat.FieldAttackModifier:
+		return m.AttackModifier()
+	case crstat.FieldAvarageDamage:
+		return m.AvarageDamage()
+	case crstat.FieldDc:
+		return m.Dc()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CrStatMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case crstat.FieldAc:
+		return m.OldAc(ctx)
+	case crstat.FieldHp:
+		return m.OldHp(ctx)
+	case crstat.FieldAttackModifier:
+		return m.OldAttackModifier(ctx)
+	case crstat.FieldAvarageDamage:
+		return m.OldAvarageDamage(ctx)
+	case crstat.FieldDc:
+		return m.OldDc(ctx)
+	}
+	return nil, fmt.Errorf("unknown CrStat field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CrStatMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case crstat.FieldAc:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAc(v)
+		return nil
+	case crstat.FieldHp:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHp(v)
+		return nil
+	case crstat.FieldAttackModifier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttackModifier(v)
+		return nil
+	case crstat.FieldAvarageDamage:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAvarageDamage(v)
+		return nil
+	case crstat.FieldDc:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDc(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CrStat field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CrStatMutation) AddedFields() []string {
+	var fields []string
+	if m.addac != nil {
+		fields = append(fields, crstat.FieldAc)
+	}
+	if m.addhp != nil {
+		fields = append(fields, crstat.FieldHp)
+	}
+	if m.addattackModifier != nil {
+		fields = append(fields, crstat.FieldAttackModifier)
+	}
+	if m.addavarageDamage != nil {
+		fields = append(fields, crstat.FieldAvarageDamage)
+	}
+	if m.adddc != nil {
+		fields = append(fields, crstat.FieldDc)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CrStatMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case crstat.FieldAc:
+		return m.AddedAc()
+	case crstat.FieldHp:
+		return m.AddedHp()
+	case crstat.FieldAttackModifier:
+		return m.AddedAttackModifier()
+	case crstat.FieldAvarageDamage:
+		return m.AddedAvarageDamage()
+	case crstat.FieldDc:
+		return m.AddedDc()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CrStatMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case crstat.FieldAc:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAc(v)
+		return nil
+	case crstat.FieldHp:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHp(v)
+		return nil
+	case crstat.FieldAttackModifier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAttackModifier(v)
+		return nil
+	case crstat.FieldAvarageDamage:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAvarageDamage(v)
+		return nil
+	case crstat.FieldDc:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDc(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CrStat numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CrStatMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CrStatMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CrStatMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CrStat nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CrStatMutation) ResetField(name string) error {
+	switch name {
+	case crstat.FieldAc:
+		m.ResetAc()
+		return nil
+	case crstat.FieldHp:
+		m.ResetHp()
+		return nil
+	case crstat.FieldAttackModifier:
+		m.ResetAttackModifier()
+		return nil
+	case crstat.FieldAvarageDamage:
+		m.ResetAvarageDamage()
+		return nil
+	case crstat.FieldDc:
+		m.ResetDc()
+		return nil
+	}
+	return fmt.Errorf("unknown CrStat field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CrStatMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cr != nil {
+		edges = append(edges, crstat.EdgeCr)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CrStatMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case crstat.EdgeCr:
+		if id := m.cr; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CrStatMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CrStatMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CrStatMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedcr {
+		edges = append(edges, crstat.EdgeCr)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CrStatMutation) EdgeCleared(name string) bool {
+	switch name {
+	case crstat.EdgeCr:
+		return m.clearedcr
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CrStatMutation) ClearEdge(name string) error {
+	switch name {
+	case crstat.EdgeCr:
+		m.ClearCr()
+		return nil
+	}
+	return fmt.Errorf("unknown CrStat unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CrStatMutation) ResetEdge(name string) error {
+	switch name {
+	case crstat.EdgeCr:
+		m.ResetCr()
+		return nil
+	}
+	return fmt.Errorf("unknown CrStat edge %s", name)
 }
 
 // EncounterMutation represents an operation that mutates the Encounter nodes in the graph.

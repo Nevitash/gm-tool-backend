@@ -8,6 +8,18 @@ import (
 	"gm-tool-backend/ent"
 )
 
+// The ChallangeRatingFunc type is an adapter to allow the use of ordinary
+// function as ChallangeRating mutator.
+type ChallangeRatingFunc func(context.Context, *ent.ChallangeRatingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ChallangeRatingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ChallangeRatingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ChallangeRatingMutation", m)
+}
+
 // The CombatantFunc type is an adapter to allow the use of ordinary
 // function as Combatant mutator.
 type CombatantFunc func(context.Context, *ent.CombatantMutation) (ent.Value, error)
@@ -18,6 +30,30 @@ func (f CombatantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CombatantMutation", m)
+}
+
+// The CrSpellSlotFunc type is an adapter to allow the use of ordinary
+// function as CrSpellSlot mutator.
+type CrSpellSlotFunc func(context.Context, *ent.CrSpellSlotMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CrSpellSlotFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CrSpellSlotMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CrSpellSlotMutation", m)
+}
+
+// The CrStatFunc type is an adapter to allow the use of ordinary
+// function as CrStat mutator.
+type CrStatFunc func(context.Context, *ent.CrStatMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CrStatFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CrStatMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CrStatMutation", m)
 }
 
 // The EncounterFunc type is an adapter to allow the use of ordinary

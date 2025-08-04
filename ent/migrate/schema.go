@@ -8,6 +8,17 @@ import (
 )
 
 var (
+	// ChallangeRatingsColumns holds the columns for the "challange_ratings" table.
+	ChallangeRatingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "cr", Type: field.TypeString, Unique: true, Size: 4},
+	}
+	// ChallangeRatingsTable holds the schema information for the "challange_ratings" table.
+	ChallangeRatingsTable = &schema.Table{
+		Name:       "challange_ratings",
+		Columns:    ChallangeRatingsColumns,
+		PrimaryKey: []*schema.Column{ChallangeRatingsColumns[0]},
+	}
 	// CombatantsColumns holds the columns for the "combatants" table.
 	CombatantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -27,6 +38,58 @@ var (
 		Name:       "combatants",
 		Columns:    CombatantsColumns,
 		PrimaryKey: []*schema.Column{CombatantsColumns[0]},
+	}
+	// CrSpellSlotsColumns holds the columns for the "cr_spell_slots" table.
+	CrSpellSlotsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "level", Type: field.TypeInt},
+		{Name: "amount", Type: field.TypeInt},
+		{Name: "challange_rating_spell_slots", Type: field.TypeUUID, Nullable: true},
+	}
+	// CrSpellSlotsTable holds the schema information for the "cr_spell_slots" table.
+	CrSpellSlotsTable = &schema.Table{
+		Name:       "cr_spell_slots",
+		Columns:    CrSpellSlotsColumns,
+		PrimaryKey: []*schema.Column{CrSpellSlotsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "cr_spell_slots_challange_ratings_spell_slots",
+				Columns:    []*schema.Column{CrSpellSlotsColumns[3]},
+				RefColumns: []*schema.Column{ChallangeRatingsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "crspellslot_level_challange_rating_spell_slots",
+				Unique:  true,
+				Columns: []*schema.Column{CrSpellSlotsColumns[1], CrSpellSlotsColumns[3]},
+			},
+		},
+	}
+	// CrStatsColumns holds the columns for the "cr_stats" table.
+	CrStatsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "ac", Type: field.TypeInt},
+		{Name: "hp", Type: field.TypeInt},
+		{Name: "attack_modifier", Type: field.TypeInt},
+		{Name: "avarage_damage", Type: field.TypeInt},
+		{Name: "dc", Type: field.TypeInt},
+		{Name: "challange_rating_stats", Type: field.TypeUUID, Unique: true, Nullable: true},
+	}
+	// CrStatsTable holds the schema information for the "cr_stats" table.
+	CrStatsTable = &schema.Table{
+		Name:       "cr_stats",
+		Columns:    CrStatsColumns,
+		PrimaryKey: []*schema.Column{CrStatsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "cr_stats_challange_ratings_stats",
+				Columns:    []*schema.Column{CrStatsColumns[6]},
+				RefColumns: []*schema.Column{ChallangeRatingsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// EncountersColumns holds the columns for the "encounters" table.
 	EncountersColumns = []*schema.Column{
@@ -93,7 +156,10 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ChallangeRatingsTable,
 		CombatantsTable,
+		CrSpellSlotsTable,
+		CrStatsTable,
 		EncountersTable,
 		EncounterCombatantsTable,
 		UsersTable,
@@ -101,6 +167,8 @@ var (
 )
 
 func init() {
+	CrSpellSlotsTable.ForeignKeys[0].RefTable = ChallangeRatingsTable
+	CrStatsTable.ForeignKeys[0].RefTable = ChallangeRatingsTable
 	EncountersTable.ForeignKeys[0].RefTable = UsersTable
 	EncounterCombatantsTable.ForeignKeys[0].RefTable = CombatantsTable
 	EncounterCombatantsTable.ForeignKeys[1].RefTable = EncountersTable

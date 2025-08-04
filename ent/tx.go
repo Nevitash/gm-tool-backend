@@ -12,8 +12,14 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// ChallangeRating is the client for interacting with the ChallangeRating builders.
+	ChallangeRating *ChallangeRatingClient
 	// Combatant is the client for interacting with the Combatant builders.
 	Combatant *CombatantClient
+	// CrSpellSlot is the client for interacting with the CrSpellSlot builders.
+	CrSpellSlot *CrSpellSlotClient
+	// CrStat is the client for interacting with the CrStat builders.
+	CrStat *CrStatClient
 	// Encounter is the client for interacting with the Encounter builders.
 	Encounter *EncounterClient
 	// EncounterCombatant is the client for interacting with the EncounterCombatant builders.
@@ -151,7 +157,10 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.ChallangeRating = NewChallangeRatingClient(tx.config)
 	tx.Combatant = NewCombatantClient(tx.config)
+	tx.CrSpellSlot = NewCrSpellSlotClient(tx.config)
+	tx.CrStat = NewCrStatClient(tx.config)
 	tx.Encounter = NewEncounterClient(tx.config)
 	tx.EncounterCombatant = NewEncounterCombatantClient(tx.config)
 	tx.User = NewUserClient(tx.config)
@@ -164,7 +173,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Combatant.QueryXXX(), the query will be executed
+// applies a query, for example: ChallangeRating.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

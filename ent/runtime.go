@@ -3,7 +3,10 @@
 package ent
 
 import (
+	"gm-tool-backend/ent/challangerating"
 	"gm-tool-backend/ent/combatant"
+	"gm-tool-backend/ent/crspellslot"
+	"gm-tool-backend/ent/crstat"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
 	"gm-tool-backend/ent/schema"
@@ -16,6 +19,30 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	challangeratingFields := schema.ChallangeRating{}.Fields()
+	_ = challangeratingFields
+	// challangeratingDescCr is the schema descriptor for cr field.
+	challangeratingDescCr := challangeratingFields[1].Descriptor()
+	// challangerating.CrValidator is a validator for the "cr" field. It is called by the builders before save.
+	challangerating.CrValidator = func() func(string) error {
+		validators := challangeratingDescCr.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(cr string) error {
+			for _, fn := range fns {
+				if err := fn(cr); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// challangeratingDescID is the schema descriptor for id field.
+	challangeratingDescID := challangeratingFields[0].Descriptor()
+	// challangerating.DefaultID holds the default value on creation for the id field.
+	challangerating.DefaultID = challangeratingDescID.Default.(func() uuid.UUID)
 	combatantFields := schema.Combatant{}.Fields()
 	_ = combatantFields
 	// combatantDescName is the schema descriptor for name field.
@@ -34,6 +61,42 @@ func init() {
 	combatantDescID := combatantFields[0].Descriptor()
 	// combatant.DefaultID holds the default value on creation for the id field.
 	combatant.DefaultID = combatantDescID.Default.(func() uuid.UUID)
+	crspellslotFields := schema.CrSpellSlot{}.Fields()
+	_ = crspellslotFields
+	// crspellslotDescLevel is the schema descriptor for level field.
+	crspellslotDescLevel := crspellslotFields[1].Descriptor()
+	// crspellslot.LevelValidator is a validator for the "level" field. It is called by the builders before save.
+	crspellslot.LevelValidator = crspellslotDescLevel.Validators[0].(func(int) error)
+	// crspellslotDescAmount is the schema descriptor for amount field.
+	crspellslotDescAmount := crspellslotFields[2].Descriptor()
+	// crspellslot.AmountValidator is a validator for the "amount" field. It is called by the builders before save.
+	crspellslot.AmountValidator = crspellslotDescAmount.Validators[0].(func(int) error)
+	// crspellslotDescID is the schema descriptor for id field.
+	crspellslotDescID := crspellslotFields[0].Descriptor()
+	// crspellslot.DefaultID holds the default value on creation for the id field.
+	crspellslot.DefaultID = crspellslotDescID.Default.(func() uuid.UUID)
+	crstatFields := schema.CrStat{}.Fields()
+	_ = crstatFields
+	// crstatDescAc is the schema descriptor for ac field.
+	crstatDescAc := crstatFields[1].Descriptor()
+	// crstat.AcValidator is a validator for the "ac" field. It is called by the builders before save.
+	crstat.AcValidator = crstatDescAc.Validators[0].(func(int) error)
+	// crstatDescHp is the schema descriptor for hp field.
+	crstatDescHp := crstatFields[2].Descriptor()
+	// crstat.HpValidator is a validator for the "hp" field. It is called by the builders before save.
+	crstat.HpValidator = crstatDescHp.Validators[0].(func(int) error)
+	// crstatDescAvarageDamage is the schema descriptor for avarageDamage field.
+	crstatDescAvarageDamage := crstatFields[4].Descriptor()
+	// crstat.AvarageDamageValidator is a validator for the "avarageDamage" field. It is called by the builders before save.
+	crstat.AvarageDamageValidator = crstatDescAvarageDamage.Validators[0].(func(int) error)
+	// crstatDescDc is the schema descriptor for dc field.
+	crstatDescDc := crstatFields[5].Descriptor()
+	// crstat.DcValidator is a validator for the "dc" field. It is called by the builders before save.
+	crstat.DcValidator = crstatDescDc.Validators[0].(func(int) error)
+	// crstatDescID is the schema descriptor for id field.
+	crstatDescID := crstatFields[0].Descriptor()
+	// crstat.DefaultID holds the default value on creation for the id field.
+	crstat.DefaultID = crstatDescID.Default.(func() uuid.UUID)
 	encounterFields := schema.Encounter{}.Fields()
 	_ = encounterFields
 	// encounterDescName is the schema descriptor for name field.

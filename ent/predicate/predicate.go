@@ -6,8 +6,17 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// ChallangeRating is the predicate function for challangerating builders.
+type ChallangeRating func(*sql.Selector)
+
 // Combatant is the predicate function for combatant builders.
 type Combatant func(*sql.Selector)
+
+// CrSpellSlot is the predicate function for crspellslot builders.
+type CrSpellSlot func(*sql.Selector)
+
+// CrStat is the predicate function for crstat builders.
+type CrStat func(*sql.Selector)
 
 // Encounter is the predicate function for encounter builders.
 type Encounter func(*sql.Selector)
