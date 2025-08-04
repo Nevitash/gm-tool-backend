@@ -15,3 +15,6 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && 
 
 # Update npm and install claude-code
 RUN npm install -g npm@11.5.1 @anthropic-ai/claude-code
+
+# Install goose
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
