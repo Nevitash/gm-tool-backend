@@ -28,6 +28,12 @@ func (crc *ChallangeRatingCreate) SetCr(s string) *ChallangeRatingCreate {
 	return crc
 }
 
+// SetExp sets the "exp" field.
+func (crc *ChallangeRatingCreate) SetExp(i int64) *ChallangeRatingCreate {
+	crc.mutation.SetExp(i)
+	return crc
+}
+
 // SetID sets the "id" field.
 func (crc *ChallangeRatingCreate) SetID(u uuid.UUID) *ChallangeRatingCreate {
 	crc.mutation.SetID(u)
@@ -127,6 +133,14 @@ func (crc *ChallangeRatingCreate) check() error {
 			return &ValidationError{Name: "cr", err: fmt.Errorf(`ent: validator failed for field "ChallangeRating.cr": %w`, err)}
 		}
 	}
+	if _, ok := crc.mutation.Exp(); !ok {
+		return &ValidationError{Name: "exp", err: errors.New(`ent: missing required field "ChallangeRating.exp"`)}
+	}
+	if v, ok := crc.mutation.Exp(); ok {
+		if err := challangerating.ExpValidator(v); err != nil {
+			return &ValidationError{Name: "exp", err: fmt.Errorf(`ent: validator failed for field "ChallangeRating.exp": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -165,6 +179,10 @@ func (crc *ChallangeRatingCreate) createSpec() (*ChallangeRating, *sqlgraph.Crea
 	if value, ok := crc.mutation.Cr(); ok {
 		_spec.SetField(challangerating.FieldCr, field.TypeString, value)
 		_node.Cr = value
+	}
+	if value, ok := crc.mutation.Exp(); ok {
+		_spec.SetField(challangerating.FieldExp, field.TypeInt64, value)
+		_node.Exp = value
 	}
 	if nodes := crc.mutation.SpellSlotsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -20,10 +20,14 @@ type Tx struct {
 	CrSpellSlot *CrSpellSlotClient
 	// CrStat is the client for interacting with the CrStat builders.
 	CrStat *CrStatClient
+	// Difficulty is the client for interacting with the Difficulty builders.
+	Difficulty *DifficultyClient
 	// Encounter is the client for interacting with the Encounter builders.
 	Encounter *EncounterClient
 	// EncounterCombatant is the client for interacting with the EncounterCombatant builders.
 	EncounterCombatant *EncounterCombatantClient
+	// EncounterDifficultyThreshold is the client for interacting with the EncounterDifficultyThreshold builders.
+	EncounterDifficultyThreshold *EncounterDifficultyThresholdClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -161,8 +165,10 @@ func (tx *Tx) init() {
 	tx.Combatant = NewCombatantClient(tx.config)
 	tx.CrSpellSlot = NewCrSpellSlotClient(tx.config)
 	tx.CrStat = NewCrStatClient(tx.config)
+	tx.Difficulty = NewDifficultyClient(tx.config)
 	tx.Encounter = NewEncounterClient(tx.config)
 	tx.EncounterCombatant = NewEncounterCombatantClient(tx.config)
+	tx.EncounterDifficultyThreshold = NewEncounterDifficultyThresholdClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

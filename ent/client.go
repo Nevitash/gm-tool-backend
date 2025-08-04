@@ -15,8 +15,10 @@ import (
 	"gm-tool-backend/ent/combatant"
 	"gm-tool-backend/ent/crspellslot"
 	"gm-tool-backend/ent/crstat"
+	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
+	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/ent/user"
 
 	"entgo.io/ent"
@@ -39,10 +41,14 @@ type Client struct {
 	CrSpellSlot *CrSpellSlotClient
 	// CrStat is the client for interacting with the CrStat builders.
 	CrStat *CrStatClient
+	// Difficulty is the client for interacting with the Difficulty builders.
+	Difficulty *DifficultyClient
 	// Encounter is the client for interacting with the Encounter builders.
 	Encounter *EncounterClient
 	// EncounterCombatant is the client for interacting with the EncounterCombatant builders.
 	EncounterCombatant *EncounterCombatantClient
+	// EncounterDifficultyThreshold is the client for interacting with the EncounterDifficultyThreshold builders.
+	EncounterDifficultyThreshold *EncounterDifficultyThresholdClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -60,8 +66,10 @@ func (c *Client) init() {
 	c.Combatant = NewCombatantClient(c.config)
 	c.CrSpellSlot = NewCrSpellSlotClient(c.config)
 	c.CrStat = NewCrStatClient(c.config)
+	c.Difficulty = NewDifficultyClient(c.config)
 	c.Encounter = NewEncounterClient(c.config)
 	c.EncounterCombatant = NewEncounterCombatantClient(c.config)
+	c.EncounterDifficultyThreshold = NewEncounterDifficultyThresholdClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -153,15 +161,17 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		ChallangeRating:    NewChallangeRatingClient(cfg),
-		Combatant:          NewCombatantClient(cfg),
-		CrSpellSlot:        NewCrSpellSlotClient(cfg),
-		CrStat:             NewCrStatClient(cfg),
-		Encounter:          NewEncounterClient(cfg),
-		EncounterCombatant: NewEncounterCombatantClient(cfg),
-		User:               NewUserClient(cfg),
+		ctx:                          ctx,
+		config:                       cfg,
+		ChallangeRating:              NewChallangeRatingClient(cfg),
+		Combatant:                    NewCombatantClient(cfg),
+		CrSpellSlot:                  NewCrSpellSlotClient(cfg),
+		CrStat:                       NewCrStatClient(cfg),
+		Difficulty:                   NewDifficultyClient(cfg),
+		Encounter:                    NewEncounterClient(cfg),
+		EncounterCombatant:           NewEncounterCombatantClient(cfg),
+		EncounterDifficultyThreshold: NewEncounterDifficultyThresholdClient(cfg),
+		User:                         NewUserClient(cfg),
 	}, nil
 }
 
@@ -179,15 +189,17 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		ChallangeRating:    NewChallangeRatingClient(cfg),
-		Combatant:          NewCombatantClient(cfg),
-		CrSpellSlot:        NewCrSpellSlotClient(cfg),
-		CrStat:             NewCrStatClient(cfg),
-		Encounter:          NewEncounterClient(cfg),
-		EncounterCombatant: NewEncounterCombatantClient(cfg),
-		User:               NewUserClient(cfg),
+		ctx:                          ctx,
+		config:                       cfg,
+		ChallangeRating:              NewChallangeRatingClient(cfg),
+		Combatant:                    NewCombatantClient(cfg),
+		CrSpellSlot:                  NewCrSpellSlotClient(cfg),
+		CrStat:                       NewCrStatClient(cfg),
+		Difficulty:                   NewDifficultyClient(cfg),
+		Encounter:                    NewEncounterClient(cfg),
+		EncounterCombatant:           NewEncounterCombatantClient(cfg),
+		EncounterDifficultyThreshold: NewEncounterDifficultyThresholdClient(cfg),
+		User:                         NewUserClient(cfg),
 	}, nil
 }
 
@@ -217,8 +229,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ChallangeRating, c.Combatant, c.CrSpellSlot, c.CrStat, c.Encounter,
-		c.EncounterCombatant, c.User,
+		c.ChallangeRating, c.Combatant, c.CrSpellSlot, c.CrStat, c.Difficulty,
+		c.Encounter, c.EncounterCombatant, c.EncounterDifficultyThreshold, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -228,8 +240,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ChallangeRating, c.Combatant, c.CrSpellSlot, c.CrStat, c.Encounter,
-		c.EncounterCombatant, c.User,
+		c.ChallangeRating, c.Combatant, c.CrSpellSlot, c.CrStat, c.Difficulty,
+		c.Encounter, c.EncounterCombatant, c.EncounterDifficultyThreshold, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -246,10 +258,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CrSpellSlot.mutate(ctx, m)
 	case *CrStatMutation:
 		return c.CrStat.mutate(ctx, m)
+	case *DifficultyMutation:
+		return c.Difficulty.mutate(ctx, m)
 	case *EncounterMutation:
 		return c.Encounter.mutate(ctx, m)
 	case *EncounterCombatantMutation:
 		return c.EncounterCombatant.mutate(ctx, m)
+	case *EncounterDifficultyThresholdMutation:
+		return c.EncounterDifficultyThreshold.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
@@ -869,6 +885,139 @@ func (c *CrStatClient) mutate(ctx context.Context, m *CrStatMutation) (Value, er
 	}
 }
 
+// DifficultyClient is a client for the Difficulty schema.
+type DifficultyClient struct {
+	config
+}
+
+// NewDifficultyClient returns a client for the Difficulty from the given config.
+func NewDifficultyClient(c config) *DifficultyClient {
+	return &DifficultyClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `difficulty.Hooks(f(g(h())))`.
+func (c *DifficultyClient) Use(hooks ...Hook) {
+	c.hooks.Difficulty = append(c.hooks.Difficulty, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `difficulty.Intercept(f(g(h())))`.
+func (c *DifficultyClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Difficulty = append(c.inters.Difficulty, interceptors...)
+}
+
+// Create returns a builder for creating a Difficulty entity.
+func (c *DifficultyClient) Create() *DifficultyCreate {
+	mutation := newDifficultyMutation(c.config, OpCreate)
+	return &DifficultyCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Difficulty entities.
+func (c *DifficultyClient) CreateBulk(builders ...*DifficultyCreate) *DifficultyCreateBulk {
+	return &DifficultyCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DifficultyClient) MapCreateBulk(slice any, setFunc func(*DifficultyCreate, int)) *DifficultyCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DifficultyCreateBulk{err: fmt.Errorf("calling to DifficultyClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DifficultyCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DifficultyCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Difficulty.
+func (c *DifficultyClient) Update() *DifficultyUpdate {
+	mutation := newDifficultyMutation(c.config, OpUpdate)
+	return &DifficultyUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DifficultyClient) UpdateOne(d *Difficulty) *DifficultyUpdateOne {
+	mutation := newDifficultyMutation(c.config, OpUpdateOne, withDifficulty(d))
+	return &DifficultyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DifficultyClient) UpdateOneID(id int) *DifficultyUpdateOne {
+	mutation := newDifficultyMutation(c.config, OpUpdateOne, withDifficultyID(id))
+	return &DifficultyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Difficulty.
+func (c *DifficultyClient) Delete() *DifficultyDelete {
+	mutation := newDifficultyMutation(c.config, OpDelete)
+	return &DifficultyDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DifficultyClient) DeleteOne(d *Difficulty) *DifficultyDeleteOne {
+	return c.DeleteOneID(d.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DifficultyClient) DeleteOneID(id int) *DifficultyDeleteOne {
+	builder := c.Delete().Where(difficulty.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DifficultyDeleteOne{builder}
+}
+
+// Query returns a query builder for Difficulty.
+func (c *DifficultyClient) Query() *DifficultyQuery {
+	return &DifficultyQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDifficulty},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Difficulty entity by its id.
+func (c *DifficultyClient) Get(ctx context.Context, id int) (*Difficulty, error) {
+	return c.Query().Where(difficulty.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DifficultyClient) GetX(ctx context.Context, id int) *Difficulty {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DifficultyClient) Hooks() []Hook {
+	return c.hooks.Difficulty
+}
+
+// Interceptors returns the client interceptors.
+func (c *DifficultyClient) Interceptors() []Interceptor {
+	return c.inters.Difficulty
+}
+
+func (c *DifficultyClient) mutate(ctx context.Context, m *DifficultyMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DifficultyCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DifficultyUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DifficultyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DifficultyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Difficulty mutation op: %q", m.Op())
+	}
+}
+
 // EncounterClient is a client for the Encounter schema.
 type EncounterClient struct {
 	config
@@ -1183,6 +1332,139 @@ func (c *EncounterCombatantClient) mutate(ctx context.Context, m *EncounterComba
 	}
 }
 
+// EncounterDifficultyThresholdClient is a client for the EncounterDifficultyThreshold schema.
+type EncounterDifficultyThresholdClient struct {
+	config
+}
+
+// NewEncounterDifficultyThresholdClient returns a client for the EncounterDifficultyThreshold from the given config.
+func NewEncounterDifficultyThresholdClient(c config) *EncounterDifficultyThresholdClient {
+	return &EncounterDifficultyThresholdClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `encounterdifficultythreshold.Hooks(f(g(h())))`.
+func (c *EncounterDifficultyThresholdClient) Use(hooks ...Hook) {
+	c.hooks.EncounterDifficultyThreshold = append(c.hooks.EncounterDifficultyThreshold, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `encounterdifficultythreshold.Intercept(f(g(h())))`.
+func (c *EncounterDifficultyThresholdClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EncounterDifficultyThreshold = append(c.inters.EncounterDifficultyThreshold, interceptors...)
+}
+
+// Create returns a builder for creating a EncounterDifficultyThreshold entity.
+func (c *EncounterDifficultyThresholdClient) Create() *EncounterDifficultyThresholdCreate {
+	mutation := newEncounterDifficultyThresholdMutation(c.config, OpCreate)
+	return &EncounterDifficultyThresholdCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EncounterDifficultyThreshold entities.
+func (c *EncounterDifficultyThresholdClient) CreateBulk(builders ...*EncounterDifficultyThresholdCreate) *EncounterDifficultyThresholdCreateBulk {
+	return &EncounterDifficultyThresholdCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EncounterDifficultyThresholdClient) MapCreateBulk(slice any, setFunc func(*EncounterDifficultyThresholdCreate, int)) *EncounterDifficultyThresholdCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EncounterDifficultyThresholdCreateBulk{err: fmt.Errorf("calling to EncounterDifficultyThresholdClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EncounterDifficultyThresholdCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EncounterDifficultyThresholdCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EncounterDifficultyThreshold.
+func (c *EncounterDifficultyThresholdClient) Update() *EncounterDifficultyThresholdUpdate {
+	mutation := newEncounterDifficultyThresholdMutation(c.config, OpUpdate)
+	return &EncounterDifficultyThresholdUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EncounterDifficultyThresholdClient) UpdateOne(edt *EncounterDifficultyThreshold) *EncounterDifficultyThresholdUpdateOne {
+	mutation := newEncounterDifficultyThresholdMutation(c.config, OpUpdateOne, withEncounterDifficultyThreshold(edt))
+	return &EncounterDifficultyThresholdUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EncounterDifficultyThresholdClient) UpdateOneID(id int) *EncounterDifficultyThresholdUpdateOne {
+	mutation := newEncounterDifficultyThresholdMutation(c.config, OpUpdateOne, withEncounterDifficultyThresholdID(id))
+	return &EncounterDifficultyThresholdUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EncounterDifficultyThreshold.
+func (c *EncounterDifficultyThresholdClient) Delete() *EncounterDifficultyThresholdDelete {
+	mutation := newEncounterDifficultyThresholdMutation(c.config, OpDelete)
+	return &EncounterDifficultyThresholdDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EncounterDifficultyThresholdClient) DeleteOne(edt *EncounterDifficultyThreshold) *EncounterDifficultyThresholdDeleteOne {
+	return c.DeleteOneID(edt.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EncounterDifficultyThresholdClient) DeleteOneID(id int) *EncounterDifficultyThresholdDeleteOne {
+	builder := c.Delete().Where(encounterdifficultythreshold.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EncounterDifficultyThresholdDeleteOne{builder}
+}
+
+// Query returns a query builder for EncounterDifficultyThreshold.
+func (c *EncounterDifficultyThresholdClient) Query() *EncounterDifficultyThresholdQuery {
+	return &EncounterDifficultyThresholdQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEncounterDifficultyThreshold},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EncounterDifficultyThreshold entity by its id.
+func (c *EncounterDifficultyThresholdClient) Get(ctx context.Context, id int) (*EncounterDifficultyThreshold, error) {
+	return c.Query().Where(encounterdifficultythreshold.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EncounterDifficultyThresholdClient) GetX(ctx context.Context, id int) *EncounterDifficultyThreshold {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *EncounterDifficultyThresholdClient) Hooks() []Hook {
+	return c.hooks.EncounterDifficultyThreshold
+}
+
+// Interceptors returns the client interceptors.
+func (c *EncounterDifficultyThresholdClient) Interceptors() []Interceptor {
+	return c.inters.EncounterDifficultyThreshold
+}
+
+func (c *EncounterDifficultyThresholdClient) mutate(ctx context.Context, m *EncounterDifficultyThresholdMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EncounterDifficultyThresholdCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EncounterDifficultyThresholdUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EncounterDifficultyThresholdUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EncounterDifficultyThresholdDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown EncounterDifficultyThreshold mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -1335,11 +1617,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ChallangeRating, Combatant, CrSpellSlot, CrStat, Encounter, EncounterCombatant,
-		User []ent.Hook
+		ChallangeRating, Combatant, CrSpellSlot, CrStat, Difficulty, Encounter,
+		EncounterCombatant, EncounterDifficultyThreshold, User []ent.Hook
 	}
 	inters struct {
-		ChallangeRating, Combatant, CrSpellSlot, CrStat, Encounter, EncounterCombatant,
-		User []ent.Interceptor
+		ChallangeRating, Combatant, CrSpellSlot, CrStat, Difficulty, Encounter,
+		EncounterCombatant, EncounterDifficultyThreshold, User []ent.Interceptor
 	}
 )

@@ -18,11 +18,17 @@ type CrSpellSlot func(*sql.Selector)
 // CrStat is the predicate function for crstat builders.
 type CrStat func(*sql.Selector)
 
+// Difficulty is the predicate function for difficulty builders.
+type Difficulty func(*sql.Selector)
+
 // Encounter is the predicate function for encounter builders.
 type Encounter func(*sql.Selector)
 
 // EncounterCombatant is the predicate function for encountercombatant builders.
 type EncounterCombatant func(*sql.Selector)
+
+// EncounterDifficultyThreshold is the predicate function for encounterdifficultythreshold builders.
+type EncounterDifficultyThreshold func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

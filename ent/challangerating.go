@@ -20,6 +20,8 @@ type ChallangeRating struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// Cr holds the value of the "cr" field.
 	Cr string `json:"cr,omitempty"`
+	// Exp holds the value of the "exp" field.
+	Exp int64 `json:"exp,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ChallangeRatingQuery when eager-loading is set.
 	Edges        ChallangeRatingEdges `json:"edges"`
@@ -62,6 +64,8 @@ func (*ChallangeRating) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case challangerating.FieldExp:
+			values[i] = new(sql.NullInt64)
 		case challangerating.FieldCr:
 			values[i] = new(sql.NullString)
 		case challangerating.FieldID:
@@ -92,6 +96,12 @@ func (cr *ChallangeRating) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field cr", values[i])
 			} else if value.Valid {
 				cr.Cr = value.String
+			}
+		case challangerating.FieldExp:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field exp", values[i])
+			} else if value.Valid {
+				cr.Exp = value.Int64
 			}
 		default:
 			cr.selectValues.Set(columns[i], values[i])
@@ -141,6 +151,9 @@ func (cr *ChallangeRating) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", cr.ID))
 	builder.WriteString("cr=")
 	builder.WriteString(cr.Cr)
+	builder.WriteString(", ")
+	builder.WriteString("exp=")
+	builder.WriteString(fmt.Sprintf("%v", cr.Exp))
 	builder.WriteByte(')')
 	return builder.String()
 }

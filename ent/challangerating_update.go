@@ -44,6 +44,27 @@ func (cru *ChallangeRatingUpdate) SetNillableCr(s *string) *ChallangeRatingUpdat
 	return cru
 }
 
+// SetExp sets the "exp" field.
+func (cru *ChallangeRatingUpdate) SetExp(i int64) *ChallangeRatingUpdate {
+	cru.mutation.ResetExp()
+	cru.mutation.SetExp(i)
+	return cru
+}
+
+// SetNillableExp sets the "exp" field if the given value is not nil.
+func (cru *ChallangeRatingUpdate) SetNillableExp(i *int64) *ChallangeRatingUpdate {
+	if i != nil {
+		cru.SetExp(*i)
+	}
+	return cru
+}
+
+// AddExp adds i to the "exp" field.
+func (cru *ChallangeRatingUpdate) AddExp(i int64) *ChallangeRatingUpdate {
+	cru.mutation.AddExp(i)
+	return cru
+}
+
 // AddSpellSlotIDs adds the "spell_slots" edge to the CrSpellSlot entity by IDs.
 func (cru *ChallangeRatingUpdate) AddSpellSlotIDs(ids ...uuid.UUID) *ChallangeRatingUpdate {
 	cru.mutation.AddSpellSlotIDs(ids...)
@@ -144,6 +165,11 @@ func (cru *ChallangeRatingUpdate) check() error {
 			return &ValidationError{Name: "cr", err: fmt.Errorf(`ent: validator failed for field "ChallangeRating.cr": %w`, err)}
 		}
 	}
+	if v, ok := cru.mutation.Exp(); ok {
+		if err := challangerating.ExpValidator(v); err != nil {
+			return &ValidationError{Name: "exp", err: fmt.Errorf(`ent: validator failed for field "ChallangeRating.exp": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -161,6 +187,12 @@ func (cru *ChallangeRatingUpdate) sqlSave(ctx context.Context) (n int, err error
 	}
 	if value, ok := cru.mutation.Cr(); ok {
 		_spec.SetField(challangerating.FieldCr, field.TypeString, value)
+	}
+	if value, ok := cru.mutation.Exp(); ok {
+		_spec.SetField(challangerating.FieldExp, field.TypeInt64, value)
+	}
+	if value, ok := cru.mutation.AddedExp(); ok {
+		_spec.AddField(challangerating.FieldExp, field.TypeInt64, value)
 	}
 	if cru.mutation.SpellSlotsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -267,6 +299,27 @@ func (cruo *ChallangeRatingUpdateOne) SetNillableCr(s *string) *ChallangeRatingU
 	if s != nil {
 		cruo.SetCr(*s)
 	}
+	return cruo
+}
+
+// SetExp sets the "exp" field.
+func (cruo *ChallangeRatingUpdateOne) SetExp(i int64) *ChallangeRatingUpdateOne {
+	cruo.mutation.ResetExp()
+	cruo.mutation.SetExp(i)
+	return cruo
+}
+
+// SetNillableExp sets the "exp" field if the given value is not nil.
+func (cruo *ChallangeRatingUpdateOne) SetNillableExp(i *int64) *ChallangeRatingUpdateOne {
+	if i != nil {
+		cruo.SetExp(*i)
+	}
+	return cruo
+}
+
+// AddExp adds i to the "exp" field.
+func (cruo *ChallangeRatingUpdateOne) AddExp(i int64) *ChallangeRatingUpdateOne {
+	cruo.mutation.AddExp(i)
 	return cruo
 }
 
@@ -383,6 +436,11 @@ func (cruo *ChallangeRatingUpdateOne) check() error {
 			return &ValidationError{Name: "cr", err: fmt.Errorf(`ent: validator failed for field "ChallangeRating.cr": %w`, err)}
 		}
 	}
+	if v, ok := cruo.mutation.Exp(); ok {
+		if err := challangerating.ExpValidator(v); err != nil {
+			return &ValidationError{Name: "exp", err: fmt.Errorf(`ent: validator failed for field "ChallangeRating.exp": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -417,6 +475,12 @@ func (cruo *ChallangeRatingUpdateOne) sqlSave(ctx context.Context) (_node *Chall
 	}
 	if value, ok := cruo.mutation.Cr(); ok {
 		_spec.SetField(challangerating.FieldCr, field.TypeString, value)
+	}
+	if value, ok := cruo.mutation.Exp(); ok {
+		_spec.SetField(challangerating.FieldExp, field.TypeInt64, value)
+	}
+	if value, ok := cruo.mutation.AddedExp(); ok {
+		_spec.AddField(challangerating.FieldExp, field.TypeInt64, value)
 	}
 	if cruo.mutation.SpellSlotsCleared() {
 		edge := &sqlgraph.EdgeSpec{

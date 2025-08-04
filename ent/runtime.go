@@ -39,6 +39,10 @@ func init() {
 			return nil
 		}
 	}()
+	// challangeratingDescExp is the schema descriptor for exp field.
+	challangeratingDescExp := challangeratingFields[2].Descriptor()
+	// challangerating.ExpValidator is a validator for the "exp" field. It is called by the builders before save.
+	challangerating.ExpValidator = challangeratingDescExp.Validators[0].(func(int64) error)
 	// challangeratingDescID is the schema descriptor for id field.
 	challangeratingDescID := challangeratingFields[0].Descriptor()
 	// challangerating.DefaultID holds the default value on creation for the id field.

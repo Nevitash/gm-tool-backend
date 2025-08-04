@@ -15,6 +15,8 @@ const (
 	FieldID = "id"
 	// FieldCr holds the string denoting the cr field in the database.
 	FieldCr = "cr"
+	// FieldExp holds the string denoting the exp field in the database.
+	FieldExp = "exp"
 	// EdgeSpellSlots holds the string denoting the spell_slots edge name in mutations.
 	EdgeSpellSlots = "spell_slots"
 	// EdgeStats holds the string denoting the stats edge name in mutations.
@@ -41,6 +43,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldCr,
+	FieldExp,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -56,6 +59,8 @@ func ValidColumn(column string) bool {
 var (
 	// CrValidator is a validator for the "cr" field. It is called by the builders before save.
 	CrValidator func(string) error
+	// ExpValidator is a validator for the "exp" field. It is called by the builders before save.
+	ExpValidator func(int64) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -71,6 +76,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByCr orders the results by the cr field.
 func ByCr(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCr, opts...).ToFunc()
+}
+
+// ByExp orders the results by the exp field.
+func ByExp(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExp, opts...).ToFunc()
 }
 
 // BySpellSlotsCount orders the results by spell_slots count.

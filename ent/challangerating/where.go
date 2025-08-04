@@ -60,6 +60,11 @@ func Cr(v string) predicate.ChallangeRating {
 	return predicate.ChallangeRating(sql.FieldEQ(FieldCr, v))
 }
 
+// Exp applies equality check predicate on the "exp" field. It's identical to ExpEQ.
+func Exp(v int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldEQ(FieldExp, v))
+}
+
 // CrEQ applies the EQ predicate on the "cr" field.
 func CrEQ(v string) predicate.ChallangeRating {
 	return predicate.ChallangeRating(sql.FieldEQ(FieldCr, v))
@@ -123,6 +128,46 @@ func CrEqualFold(v string) predicate.ChallangeRating {
 // CrContainsFold applies the ContainsFold predicate on the "cr" field.
 func CrContainsFold(v string) predicate.ChallangeRating {
 	return predicate.ChallangeRating(sql.FieldContainsFold(FieldCr, v))
+}
+
+// ExpEQ applies the EQ predicate on the "exp" field.
+func ExpEQ(v int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldEQ(FieldExp, v))
+}
+
+// ExpNEQ applies the NEQ predicate on the "exp" field.
+func ExpNEQ(v int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldNEQ(FieldExp, v))
+}
+
+// ExpIn applies the In predicate on the "exp" field.
+func ExpIn(vs ...int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldIn(FieldExp, vs...))
+}
+
+// ExpNotIn applies the NotIn predicate on the "exp" field.
+func ExpNotIn(vs ...int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldNotIn(FieldExp, vs...))
+}
+
+// ExpGT applies the GT predicate on the "exp" field.
+func ExpGT(v int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldGT(FieldExp, v))
+}
+
+// ExpGTE applies the GTE predicate on the "exp" field.
+func ExpGTE(v int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldGTE(FieldExp, v))
+}
+
+// ExpLT applies the LT predicate on the "exp" field.
+func ExpLT(v int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldLT(FieldExp, v))
+}
+
+// ExpLTE applies the LTE predicate on the "exp" field.
+func ExpLTE(v int64) predicate.ChallangeRating {
+	return predicate.ChallangeRating(sql.FieldLTE(FieldExp, v))
 }
 
 // HasSpellSlots applies the HasEdge predicate on the "spell_slots" edge.

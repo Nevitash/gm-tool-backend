@@ -17,6 +17,7 @@ func (ChallangeRating) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New).Unique(),
 		field.String("cr").Unique().MaxLen(4).NotEmpty(),
+		field.Int64("exp").NonNegative(),
 	}
 }
 

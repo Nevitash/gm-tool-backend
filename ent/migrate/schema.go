@@ -12,6 +12,7 @@ var (
 	ChallangeRatingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "cr", Type: field.TypeString, Unique: true, Size: 4},
+		{Name: "exp", Type: field.TypeInt64},
 	}
 	// ChallangeRatingsTable holds the schema information for the "challange_ratings" table.
 	ChallangeRatingsTable = &schema.Table{
@@ -91,6 +92,16 @@ var (
 			},
 		},
 	}
+	// DifficultiesColumns holds the columns for the "difficulties" table.
+	DifficultiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+	}
+	// DifficultiesTable holds the schema information for the "difficulties" table.
+	DifficultiesTable = &schema.Table{
+		Name:       "difficulties",
+		Columns:    DifficultiesColumns,
+		PrimaryKey: []*schema.Column{DifficultiesColumns[0]},
+	}
 	// EncountersColumns holds the columns for the "encounters" table.
 	EncountersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -141,6 +152,16 @@ var (
 			},
 		},
 	}
+	// EncounterDifficultyThresholdsColumns holds the columns for the "encounter_difficulty_thresholds" table.
+	EncounterDifficultyThresholdsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+	}
+	// EncounterDifficultyThresholdsTable holds the schema information for the "encounter_difficulty_thresholds" table.
+	EncounterDifficultyThresholdsTable = &schema.Table{
+		Name:       "encounter_difficulty_thresholds",
+		Columns:    EncounterDifficultyThresholdsColumns,
+		PrimaryKey: []*schema.Column{EncounterDifficultyThresholdsColumns[0]},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -160,8 +181,10 @@ var (
 		CombatantsTable,
 		CrSpellSlotsTable,
 		CrStatsTable,
+		DifficultiesTable,
 		EncountersTable,
 		EncounterCombatantsTable,
+		EncounterDifficultyThresholdsTable,
 		UsersTable,
 	}
 )

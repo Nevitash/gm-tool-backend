@@ -56,6 +56,18 @@ func (f CrStatFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CrStatMutation", m)
 }
 
+// The DifficultyFunc type is an adapter to allow the use of ordinary
+// function as Difficulty mutator.
+type DifficultyFunc func(context.Context, *ent.DifficultyMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DifficultyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DifficultyMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DifficultyMutation", m)
+}
+
 // The EncounterFunc type is an adapter to allow the use of ordinary
 // function as Encounter mutator.
 type EncounterFunc func(context.Context, *ent.EncounterMutation) (ent.Value, error)
@@ -78,6 +90,18 @@ func (f EncounterCombatantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EncounterCombatantMutation", m)
+}
+
+// The EncounterDifficultyThresholdFunc type is an adapter to allow the use of ordinary
+// function as EncounterDifficultyThreshold mutator.
+type EncounterDifficultyThresholdFunc func(context.Context, *ent.EncounterDifficultyThresholdMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EncounterDifficultyThresholdFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.EncounterDifficultyThresholdMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EncounterDifficultyThresholdMutation", m)
 }
 
 // The UserFunc type is an adapter to allow the use of ordinary

@@ -10,8 +10,10 @@ import (
 	"gm-tool-backend/ent/combatant"
 	"gm-tool-backend/ent/crspellslot"
 	"gm-tool-backend/ent/crstat"
+	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
+	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/ent/user"
 	"reflect"
 	"sync"
@@ -79,13 +81,15 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			challangerating.Table:    challangerating.ValidColumn,
-			combatant.Table:          combatant.ValidColumn,
-			crspellslot.Table:        crspellslot.ValidColumn,
-			crstat.Table:             crstat.ValidColumn,
-			encounter.Table:          encounter.ValidColumn,
-			encountercombatant.Table: encountercombatant.ValidColumn,
-			user.Table:               user.ValidColumn,
+			challangerating.Table:              challangerating.ValidColumn,
+			combatant.Table:                    combatant.ValidColumn,
+			crspellslot.Table:                  crspellslot.ValidColumn,
+			crstat.Table:                       crstat.ValidColumn,
+			difficulty.Table:                   difficulty.ValidColumn,
+			encounter.Table:                    encounter.ValidColumn,
+			encountercombatant.Table:           encountercombatant.ValidColumn,
+			encounterdifficultythreshold.Table: encounterdifficultythreshold.ValidColumn,
+			user.Table:                         user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)
