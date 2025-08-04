@@ -40,7 +40,7 @@ func (edtd *EncounterDifficultyThresholdDelete) ExecX(ctx context.Context) int {
 }
 
 func (edtd *EncounterDifficultyThresholdDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(encounterdifficultythreshold.Table, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(encounterdifficultythreshold.Table, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID))
 	if ps := edtd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

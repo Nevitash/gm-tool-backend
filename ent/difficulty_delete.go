@@ -40,7 +40,7 @@ func (dd *DifficultyDelete) ExecX(ctx context.Context) int {
 }
 
 func (dd *DifficultyDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(difficulty.Table, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(difficulty.Table, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID))
 	if ps := dd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

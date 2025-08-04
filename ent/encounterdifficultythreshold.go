@@ -4,19 +4,49 @@ package ent
 
 import (
 	"fmt"
+	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"strings"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 )
 
 // EncounterDifficultyThreshold is the model entity for the EncounterDifficultyThreshold schema.
 type EncounterDifficultyThreshold struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
-	selectValues sql.SelectValues
+	ID uuid.UUID `json:"id,omitempty"`
+	// PlayerLevel holds the value of the "player_level" field.
+	PlayerLevel int `json:"player_level,omitempty"`
+	// Exp holds the value of the "exp" field.
+	Exp int64 `json:"exp,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the EncounterDifficultyThresholdQuery when eager-loading is set.
+	Edges                 EncounterDifficultyThresholdEdges `json:"edges"`
+	difficulty_thresholds *uuid.UUID
+	selectValues          sql.SelectValues
+}
+
+// EncounterDifficultyThresholdEdges holds the relations/edges for other nodes in the graph.
+type EncounterDifficultyThresholdEdges struct {
+	// Difficulty holds the value of the difficulty edge.
+	Difficulty *Difficulty `json:"difficulty,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// DifficultyOrErr returns the Difficulty value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e EncounterDifficultyThresholdEdges) DifficultyOrErr() (*Difficulty, error) {
+	if e.Difficulty != nil {
+		return e.Difficulty, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: difficulty.Label}
+	}
+	return nil, &NotLoadedError{edge: "difficulty"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,8 +54,12 @@ func (*EncounterDifficultyThreshold) scanValues(columns []string) ([]any, error)
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case encounterdifficultythreshold.FieldID:
+		case encounterdifficultythreshold.FieldPlayerLevel, encounterdifficultythreshold.FieldExp:
 			values[i] = new(sql.NullInt64)
+		case encounterdifficultythreshold.FieldID:
+			values[i] = new(uuid.UUID)
+		case encounterdifficultythreshold.ForeignKeys[0]: // difficulty_thresholds
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -42,11 +76,30 @@ func (edt *EncounterDifficultyThreshold) assignValues(columns []string, values [
 	for i := range columns {
 		switch columns[i] {
 		case encounterdifficultythreshold.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				edt.ID = *value
 			}
-			edt.ID = int(value.Int64)
+		case encounterdifficultythreshold.FieldPlayerLevel:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field player_level", values[i])
+			} else if value.Valid {
+				edt.PlayerLevel = int(value.Int64)
+			}
+		case encounterdifficultythreshold.FieldExp:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field exp", values[i])
+			} else if value.Valid {
+				edt.Exp = value.Int64
+			}
+		case encounterdifficultythreshold.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field difficulty_thresholds", values[i])
+			} else if value.Valid {
+				edt.difficulty_thresholds = new(uuid.UUID)
+				*edt.difficulty_thresholds = *value.S.(*uuid.UUID)
+			}
 		default:
 			edt.selectValues.Set(columns[i], values[i])
 		}
@@ -58,6 +111,11 @@ func (edt *EncounterDifficultyThreshold) assignValues(columns []string, values [
 // This includes values selected through modifiers, order, etc.
 func (edt *EncounterDifficultyThreshold) Value(name string) (ent.Value, error) {
 	return edt.selectValues.Get(name)
+}
+
+// QueryDifficulty queries the "difficulty" edge of the EncounterDifficultyThreshold entity.
+func (edt *EncounterDifficultyThreshold) QueryDifficulty() *DifficultyQuery {
+	return NewEncounterDifficultyThresholdClient(edt.config).QueryDifficulty(edt)
 }
 
 // Update returns a builder for updating this EncounterDifficultyThreshold.
@@ -82,7 +140,12 @@ func (edt *EncounterDifficultyThreshold) Unwrap() *EncounterDifficultyThreshold 
 func (edt *EncounterDifficultyThreshold) String() string {
 	var builder strings.Builder
 	builder.WriteString("EncounterDifficultyThreshold(")
-	builder.WriteString(fmt.Sprintf("id=%v", edt.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", edt.ID))
+	builder.WriteString("player_level=")
+	builder.WriteString(fmt.Sprintf("%v", edt.PlayerLevel))
+	builder.WriteString(", ")
+	builder.WriteString("exp=")
+	builder.WriteString(fmt.Sprintf("%v", edt.Exp))
 	builder.WriteByte(')')
 	return builder.String()
 }

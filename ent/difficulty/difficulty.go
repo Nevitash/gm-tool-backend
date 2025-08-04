@@ -4,6 +4,8 @@ package difficulty
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -11,13 +13,25 @@ const (
 	Label = "difficulty"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
+	// EdgeThresholds holds the string denoting the thresholds edge name in mutations.
+	EdgeThresholds = "thresholds"
 	// Table holds the table name of the difficulty in the database.
 	Table = "difficulties"
+	// ThresholdsTable is the table that holds the thresholds relation/edge.
+	ThresholdsTable = "encounter_difficulty_thresholds"
+	// ThresholdsInverseTable is the table name for the EncounterDifficultyThreshold entity.
+	// It exists in this package in order to avoid circular dependency with the "encounterdifficultythreshold" package.
+	ThresholdsInverseTable = "encounter_difficulty_thresholds"
+	// ThresholdsColumn is the table column denoting the thresholds relation/edge.
+	ThresholdsColumn = "difficulty_thresholds"
 )
 
 // Columns holds all SQL columns for difficulty fields.
 var Columns = []string{
 	FieldID,
+	FieldName,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -30,10 +44,43 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+var (
+	// NameValidator is a validator for the "name" field. It is called by the builders before save.
+	NameValidator func(string) error
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
+)
+
 // OrderOption defines the ordering options for the Difficulty queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByThresholdsCount orders the results by thresholds count.
+func ByThresholdsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newThresholdsStep(), opts...)
+	}
+}
+
+// ByThresholds orders the results by thresholds terms.
+func ByThresholds(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newThresholdsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newThresholdsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ThresholdsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ThresholdsTable, ThresholdsColumn),
+	)
 }

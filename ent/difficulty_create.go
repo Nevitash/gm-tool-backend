@@ -4,11 +4,14 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"gm-tool-backend/ent/difficulty"
+	"gm-tool-backend/ent/encounterdifficultythreshold"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // DifficultyCreate is the builder for creating a Difficulty entity.
@@ -18,6 +21,41 @@ type DifficultyCreate struct {
 	hooks    []Hook
 }
 
+// SetName sets the "name" field.
+func (dc *DifficultyCreate) SetName(s string) *DifficultyCreate {
+	dc.mutation.SetName(s)
+	return dc
+}
+
+// SetID sets the "id" field.
+func (dc *DifficultyCreate) SetID(u uuid.UUID) *DifficultyCreate {
+	dc.mutation.SetID(u)
+	return dc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (dc *DifficultyCreate) SetNillableID(u *uuid.UUID) *DifficultyCreate {
+	if u != nil {
+		dc.SetID(*u)
+	}
+	return dc
+}
+
+// AddThresholdIDs adds the "thresholds" edge to the EncounterDifficultyThreshold entity by IDs.
+func (dc *DifficultyCreate) AddThresholdIDs(ids ...uuid.UUID) *DifficultyCreate {
+	dc.mutation.AddThresholdIDs(ids...)
+	return dc
+}
+
+// AddThresholds adds the "thresholds" edges to the EncounterDifficultyThreshold entity.
+func (dc *DifficultyCreate) AddThresholds(e ...*EncounterDifficultyThreshold) *DifficultyCreate {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return dc.AddThresholdIDs(ids...)
+}
+
 // Mutation returns the DifficultyMutation object of the builder.
 func (dc *DifficultyCreate) Mutation() *DifficultyMutation {
 	return dc.mutation
@@ -25,6 +63,7 @@ func (dc *DifficultyCreate) Mutation() *DifficultyMutation {
 
 // Save creates the Difficulty in the database.
 func (dc *DifficultyCreate) Save(ctx context.Context) (*Difficulty, error) {
+	dc.defaults()
 	return withHooks(ctx, dc.sqlSave, dc.mutation, dc.hooks)
 }
 
@@ -50,8 +89,24 @@ func (dc *DifficultyCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (dc *DifficultyCreate) defaults() {
+	if _, ok := dc.mutation.ID(); !ok {
+		v := difficulty.DefaultID()
+		dc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (dc *DifficultyCreate) check() error {
+	if _, ok := dc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Difficulty.name"`)}
+	}
+	if v, ok := dc.mutation.Name(); ok {
+		if err := difficulty.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Difficulty.name": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -66,8 +121,13 @@ func (dc *DifficultyCreate) sqlSave(ctx context.Context) (*Difficulty, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	dc.mutation.id = &_node.ID
 	dc.mutation.done = true
 	return _node, nil
@@ -76,8 +136,32 @@ func (dc *DifficultyCreate) sqlSave(ctx context.Context) (*Difficulty, error) {
 func (dc *DifficultyCreate) createSpec() (*Difficulty, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Difficulty{config: dc.config}
-		_spec = sqlgraph.NewCreateSpec(difficulty.Table, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(difficulty.Table, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID))
 	)
+	if id, ok := dc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := dc.mutation.Name(); ok {
+		_spec.SetField(difficulty.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
+	if nodes := dc.mutation.ThresholdsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   difficulty.ThresholdsTable,
+			Columns: []string{difficulty.ThresholdsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -99,6 +183,7 @@ func (dcb *DifficultyCreateBulk) Save(ctx context.Context) ([]*Difficulty, error
 	for i := range dcb.builders {
 		func(i int, root context.Context) {
 			builder := dcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*DifficultyMutation)
 				if !ok {
@@ -125,10 +210,6 @@ func (dcb *DifficultyCreateBulk) Save(ctx context.Context) ([]*Difficulty, error
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

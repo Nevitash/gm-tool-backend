@@ -7,8 +7,10 @@ import (
 	"gm-tool-backend/ent/combatant"
 	"gm-tool-backend/ent/crspellslot"
 	"gm-tool-backend/ent/crstat"
+	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
+	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/ent/schema"
 	"gm-tool-backend/ent/user"
 
@@ -101,6 +103,16 @@ func init() {
 	crstatDescID := crstatFields[0].Descriptor()
 	// crstat.DefaultID holds the default value on creation for the id field.
 	crstat.DefaultID = crstatDescID.Default.(func() uuid.UUID)
+	difficultyFields := schema.Difficulty{}.Fields()
+	_ = difficultyFields
+	// difficultyDescName is the schema descriptor for name field.
+	difficultyDescName := difficultyFields[1].Descriptor()
+	// difficulty.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	difficulty.NameValidator = difficultyDescName.Validators[0].(func(string) error)
+	// difficultyDescID is the schema descriptor for id field.
+	difficultyDescID := difficultyFields[0].Descriptor()
+	// difficulty.DefaultID holds the default value on creation for the id field.
+	difficulty.DefaultID = difficultyDescID.Default.(func() uuid.UUID)
 	encounterFields := schema.Encounter{}.Fields()
 	_ = encounterFields
 	// encounterDescName is the schema descriptor for name field.
@@ -129,6 +141,20 @@ func init() {
 	encountercombatantDescID := encountercombatantFields[0].Descriptor()
 	// encountercombatant.DefaultID holds the default value on creation for the id field.
 	encountercombatant.DefaultID = encountercombatantDescID.Default.(func() uuid.UUID)
+	encounterdifficultythresholdFields := schema.EncounterDifficultyThreshold{}.Fields()
+	_ = encounterdifficultythresholdFields
+	// encounterdifficultythresholdDescPlayerLevel is the schema descriptor for player_level field.
+	encounterdifficultythresholdDescPlayerLevel := encounterdifficultythresholdFields[1].Descriptor()
+	// encounterdifficultythreshold.PlayerLevelValidator is a validator for the "player_level" field. It is called by the builders before save.
+	encounterdifficultythreshold.PlayerLevelValidator = encounterdifficultythresholdDescPlayerLevel.Validators[0].(func(int) error)
+	// encounterdifficultythresholdDescExp is the schema descriptor for exp field.
+	encounterdifficultythresholdDescExp := encounterdifficultythresholdFields[2].Descriptor()
+	// encounterdifficultythreshold.ExpValidator is a validator for the "exp" field. It is called by the builders before save.
+	encounterdifficultythreshold.ExpValidator = encounterdifficultythresholdDescExp.Validators[0].(func(int64) error)
+	// encounterdifficultythresholdDescID is the schema descriptor for id field.
+	encounterdifficultythresholdDescID := encounterdifficultythresholdFields[0].Descriptor()
+	// encounterdifficultythreshold.DefaultID holds the default value on creation for the id field.
+	encounterdifficultythreshold.DefaultID = encounterdifficultythresholdDescID.Default.(func() uuid.UUID)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescName is the schema descriptor for name field.

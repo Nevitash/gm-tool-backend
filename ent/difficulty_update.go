@@ -7,11 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"gm-tool-backend/ent/difficulty"
+	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // DifficultyUpdate is the builder for updating Difficulty entities.
@@ -27,9 +29,59 @@ func (du *DifficultyUpdate) Where(ps ...predicate.Difficulty) *DifficultyUpdate 
 	return du
 }
 
+// SetName sets the "name" field.
+func (du *DifficultyUpdate) SetName(s string) *DifficultyUpdate {
+	du.mutation.SetName(s)
+	return du
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (du *DifficultyUpdate) SetNillableName(s *string) *DifficultyUpdate {
+	if s != nil {
+		du.SetName(*s)
+	}
+	return du
+}
+
+// AddThresholdIDs adds the "thresholds" edge to the EncounterDifficultyThreshold entity by IDs.
+func (du *DifficultyUpdate) AddThresholdIDs(ids ...uuid.UUID) *DifficultyUpdate {
+	du.mutation.AddThresholdIDs(ids...)
+	return du
+}
+
+// AddThresholds adds the "thresholds" edges to the EncounterDifficultyThreshold entity.
+func (du *DifficultyUpdate) AddThresholds(e ...*EncounterDifficultyThreshold) *DifficultyUpdate {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return du.AddThresholdIDs(ids...)
+}
+
 // Mutation returns the DifficultyMutation object of the builder.
 func (du *DifficultyUpdate) Mutation() *DifficultyMutation {
 	return du.mutation
+}
+
+// ClearThresholds clears all "thresholds" edges to the EncounterDifficultyThreshold entity.
+func (du *DifficultyUpdate) ClearThresholds() *DifficultyUpdate {
+	du.mutation.ClearThresholds()
+	return du
+}
+
+// RemoveThresholdIDs removes the "thresholds" edge to EncounterDifficultyThreshold entities by IDs.
+func (du *DifficultyUpdate) RemoveThresholdIDs(ids ...uuid.UUID) *DifficultyUpdate {
+	du.mutation.RemoveThresholdIDs(ids...)
+	return du
+}
+
+// RemoveThresholds removes "thresholds" edges to EncounterDifficultyThreshold entities.
+func (du *DifficultyUpdate) RemoveThresholds(e ...*EncounterDifficultyThreshold) *DifficultyUpdate {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return du.RemoveThresholdIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -59,14 +111,75 @@ func (du *DifficultyUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (du *DifficultyUpdate) check() error {
+	if v, ok := du.mutation.Name(); ok {
+		if err := difficulty.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Difficulty.name": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (du *DifficultyUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(difficulty.Table, difficulty.Columns, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeInt))
+	if err := du.check(); err != nil {
+		return n, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(difficulty.Table, difficulty.Columns, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID))
 	if ps := du.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := du.mutation.Name(); ok {
+		_spec.SetField(difficulty.FieldName, field.TypeString, value)
+	}
+	if du.mutation.ThresholdsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   difficulty.ThresholdsTable,
+			Columns: []string{difficulty.ThresholdsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.RemovedThresholdsIDs(); len(nodes) > 0 && !du.mutation.ThresholdsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   difficulty.ThresholdsTable,
+			Columns: []string{difficulty.ThresholdsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.ThresholdsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   difficulty.ThresholdsTable,
+			Columns: []string{difficulty.ThresholdsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -88,9 +201,59 @@ type DifficultyUpdateOne struct {
 	mutation *DifficultyMutation
 }
 
+// SetName sets the "name" field.
+func (duo *DifficultyUpdateOne) SetName(s string) *DifficultyUpdateOne {
+	duo.mutation.SetName(s)
+	return duo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (duo *DifficultyUpdateOne) SetNillableName(s *string) *DifficultyUpdateOne {
+	if s != nil {
+		duo.SetName(*s)
+	}
+	return duo
+}
+
+// AddThresholdIDs adds the "thresholds" edge to the EncounterDifficultyThreshold entity by IDs.
+func (duo *DifficultyUpdateOne) AddThresholdIDs(ids ...uuid.UUID) *DifficultyUpdateOne {
+	duo.mutation.AddThresholdIDs(ids...)
+	return duo
+}
+
+// AddThresholds adds the "thresholds" edges to the EncounterDifficultyThreshold entity.
+func (duo *DifficultyUpdateOne) AddThresholds(e ...*EncounterDifficultyThreshold) *DifficultyUpdateOne {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return duo.AddThresholdIDs(ids...)
+}
+
 // Mutation returns the DifficultyMutation object of the builder.
 func (duo *DifficultyUpdateOne) Mutation() *DifficultyMutation {
 	return duo.mutation
+}
+
+// ClearThresholds clears all "thresholds" edges to the EncounterDifficultyThreshold entity.
+func (duo *DifficultyUpdateOne) ClearThresholds() *DifficultyUpdateOne {
+	duo.mutation.ClearThresholds()
+	return duo
+}
+
+// RemoveThresholdIDs removes the "thresholds" edge to EncounterDifficultyThreshold entities by IDs.
+func (duo *DifficultyUpdateOne) RemoveThresholdIDs(ids ...uuid.UUID) *DifficultyUpdateOne {
+	duo.mutation.RemoveThresholdIDs(ids...)
+	return duo
+}
+
+// RemoveThresholds removes "thresholds" edges to EncounterDifficultyThreshold entities.
+func (duo *DifficultyUpdateOne) RemoveThresholds(e ...*EncounterDifficultyThreshold) *DifficultyUpdateOne {
+	ids := make([]uuid.UUID, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return duo.RemoveThresholdIDs(ids...)
 }
 
 // Where appends a list predicates to the DifficultyUpdate builder.
@@ -133,8 +296,21 @@ func (duo *DifficultyUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (duo *DifficultyUpdateOne) check() error {
+	if v, ok := duo.mutation.Name(); ok {
+		if err := difficulty.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Difficulty.name": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (duo *DifficultyUpdateOne) sqlSave(ctx context.Context) (_node *Difficulty, err error) {
-	_spec := sqlgraph.NewUpdateSpec(difficulty.Table, difficulty.Columns, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeInt))
+	if err := duo.check(); err != nil {
+		return _node, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(difficulty.Table, difficulty.Columns, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID))
 	id, ok := duo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Difficulty.id" for update`)}
@@ -158,6 +334,54 @@ func (duo *DifficultyUpdateOne) sqlSave(ctx context.Context) (_node *Difficulty,
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := duo.mutation.Name(); ok {
+		_spec.SetField(difficulty.FieldName, field.TypeString, value)
+	}
+	if duo.mutation.ThresholdsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   difficulty.ThresholdsTable,
+			Columns: []string{difficulty.ThresholdsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.RemovedThresholdsIDs(); len(nodes) > 0 && !duo.mutation.ThresholdsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   difficulty.ThresholdsTable,
+			Columns: []string{difficulty.ThresholdsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.ThresholdsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   difficulty.ThresholdsTable,
+			Columns: []string{difficulty.ThresholdsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Difficulty{config: duo.config}
 	_spec.Assign = _node.assignValues

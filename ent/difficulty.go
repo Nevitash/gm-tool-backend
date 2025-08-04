@@ -9,14 +9,38 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 )
 
 // Difficulty is the model entity for the Difficulty schema.
 type Difficulty struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the DifficultyQuery when eager-loading is set.
+	Edges        DifficultyEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// DifficultyEdges holds the relations/edges for other nodes in the graph.
+type DifficultyEdges struct {
+	// Thresholds holds the value of the thresholds edge.
+	Thresholds []*EncounterDifficultyThreshold `json:"thresholds,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// ThresholdsOrErr returns the Thresholds value or an error if the edge
+// was not loaded in eager-loading.
+func (e DifficultyEdges) ThresholdsOrErr() ([]*EncounterDifficultyThreshold, error) {
+	if e.loadedTypes[0] {
+		return e.Thresholds, nil
+	}
+	return nil, &NotLoadedError{edge: "thresholds"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,8 +48,10 @@ func (*Difficulty) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case difficulty.FieldName:
+			values[i] = new(sql.NullString)
 		case difficulty.FieldID:
-			values[i] = new(sql.NullInt64)
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -42,11 +68,17 @@ func (d *Difficulty) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case difficulty.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				d.ID = *value
 			}
-			d.ID = int(value.Int64)
+		case difficulty.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				d.Name = value.String
+			}
 		default:
 			d.selectValues.Set(columns[i], values[i])
 		}
@@ -58,6 +90,11 @@ func (d *Difficulty) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (d *Difficulty) Value(name string) (ent.Value, error) {
 	return d.selectValues.Get(name)
+}
+
+// QueryThresholds queries the "thresholds" edge of the Difficulty entity.
+func (d *Difficulty) QueryThresholds() *EncounterDifficultyThresholdQuery {
+	return NewDifficultyClient(d.config).QueryThresholds(d)
 }
 
 // Update returns a builder for updating this Difficulty.
@@ -82,7 +119,9 @@ func (d *Difficulty) Unwrap() *Difficulty {
 func (d *Difficulty) String() string {
 	var builder strings.Builder
 	builder.WriteString("Difficulty(")
-	builder.WriteString(fmt.Sprintf("id=%v", d.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", d.ID))
+	builder.WriteString("name=")
+	builder.WriteString(d.Name)
 	builder.WriteByte(')')
 	return builder.String()
 }

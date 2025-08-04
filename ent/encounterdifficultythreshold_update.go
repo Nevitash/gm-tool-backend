@@ -6,12 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // EncounterDifficultyThresholdUpdate is the builder for updating EncounterDifficultyThreshold entities.
@@ -27,9 +29,76 @@ func (edtu *EncounterDifficultyThresholdUpdate) Where(ps ...predicate.EncounterD
 	return edtu
 }
 
+// SetPlayerLevel sets the "player_level" field.
+func (edtu *EncounterDifficultyThresholdUpdate) SetPlayerLevel(i int) *EncounterDifficultyThresholdUpdate {
+	edtu.mutation.ResetPlayerLevel()
+	edtu.mutation.SetPlayerLevel(i)
+	return edtu
+}
+
+// SetNillablePlayerLevel sets the "player_level" field if the given value is not nil.
+func (edtu *EncounterDifficultyThresholdUpdate) SetNillablePlayerLevel(i *int) *EncounterDifficultyThresholdUpdate {
+	if i != nil {
+		edtu.SetPlayerLevel(*i)
+	}
+	return edtu
+}
+
+// AddPlayerLevel adds i to the "player_level" field.
+func (edtu *EncounterDifficultyThresholdUpdate) AddPlayerLevel(i int) *EncounterDifficultyThresholdUpdate {
+	edtu.mutation.AddPlayerLevel(i)
+	return edtu
+}
+
+// SetExp sets the "exp" field.
+func (edtu *EncounterDifficultyThresholdUpdate) SetExp(i int64) *EncounterDifficultyThresholdUpdate {
+	edtu.mutation.ResetExp()
+	edtu.mutation.SetExp(i)
+	return edtu
+}
+
+// SetNillableExp sets the "exp" field if the given value is not nil.
+func (edtu *EncounterDifficultyThresholdUpdate) SetNillableExp(i *int64) *EncounterDifficultyThresholdUpdate {
+	if i != nil {
+		edtu.SetExp(*i)
+	}
+	return edtu
+}
+
+// AddExp adds i to the "exp" field.
+func (edtu *EncounterDifficultyThresholdUpdate) AddExp(i int64) *EncounterDifficultyThresholdUpdate {
+	edtu.mutation.AddExp(i)
+	return edtu
+}
+
+// SetDifficultyID sets the "difficulty" edge to the Difficulty entity by ID.
+func (edtu *EncounterDifficultyThresholdUpdate) SetDifficultyID(id uuid.UUID) *EncounterDifficultyThresholdUpdate {
+	edtu.mutation.SetDifficultyID(id)
+	return edtu
+}
+
+// SetNillableDifficultyID sets the "difficulty" edge to the Difficulty entity by ID if the given value is not nil.
+func (edtu *EncounterDifficultyThresholdUpdate) SetNillableDifficultyID(id *uuid.UUID) *EncounterDifficultyThresholdUpdate {
+	if id != nil {
+		edtu = edtu.SetDifficultyID(*id)
+	}
+	return edtu
+}
+
+// SetDifficulty sets the "difficulty" edge to the Difficulty entity.
+func (edtu *EncounterDifficultyThresholdUpdate) SetDifficulty(d *Difficulty) *EncounterDifficultyThresholdUpdate {
+	return edtu.SetDifficultyID(d.ID)
+}
+
 // Mutation returns the EncounterDifficultyThresholdMutation object of the builder.
 func (edtu *EncounterDifficultyThresholdUpdate) Mutation() *EncounterDifficultyThresholdMutation {
 	return edtu.mutation
+}
+
+// ClearDifficulty clears the "difficulty" edge to the Difficulty entity.
+func (edtu *EncounterDifficultyThresholdUpdate) ClearDifficulty() *EncounterDifficultyThresholdUpdate {
+	edtu.mutation.ClearDifficulty()
+	return edtu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -59,14 +128,73 @@ func (edtu *EncounterDifficultyThresholdUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (edtu *EncounterDifficultyThresholdUpdate) check() error {
+	if v, ok := edtu.mutation.PlayerLevel(); ok {
+		if err := encounterdifficultythreshold.PlayerLevelValidator(v); err != nil {
+			return &ValidationError{Name: "player_level", err: fmt.Errorf(`ent: validator failed for field "EncounterDifficultyThreshold.player_level": %w`, err)}
+		}
+	}
+	if v, ok := edtu.mutation.Exp(); ok {
+		if err := encounterdifficultythreshold.ExpValidator(v); err != nil {
+			return &ValidationError{Name: "exp", err: fmt.Errorf(`ent: validator failed for field "EncounterDifficultyThreshold.exp": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (edtu *EncounterDifficultyThresholdUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(encounterdifficultythreshold.Table, encounterdifficultythreshold.Columns, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeInt))
+	if err := edtu.check(); err != nil {
+		return n, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(encounterdifficultythreshold.Table, encounterdifficultythreshold.Columns, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID))
 	if ps := edtu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := edtu.mutation.PlayerLevel(); ok {
+		_spec.SetField(encounterdifficultythreshold.FieldPlayerLevel, field.TypeInt, value)
+	}
+	if value, ok := edtu.mutation.AddedPlayerLevel(); ok {
+		_spec.AddField(encounterdifficultythreshold.FieldPlayerLevel, field.TypeInt, value)
+	}
+	if value, ok := edtu.mutation.Exp(); ok {
+		_spec.SetField(encounterdifficultythreshold.FieldExp, field.TypeInt64, value)
+	}
+	if value, ok := edtu.mutation.AddedExp(); ok {
+		_spec.AddField(encounterdifficultythreshold.FieldExp, field.TypeInt64, value)
+	}
+	if edtu.mutation.DifficultyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounterdifficultythreshold.DifficultyTable,
+			Columns: []string{encounterdifficultythreshold.DifficultyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := edtu.mutation.DifficultyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounterdifficultythreshold.DifficultyTable,
+			Columns: []string{encounterdifficultythreshold.DifficultyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, edtu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -88,9 +216,76 @@ type EncounterDifficultyThresholdUpdateOne struct {
 	mutation *EncounterDifficultyThresholdMutation
 }
 
+// SetPlayerLevel sets the "player_level" field.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) SetPlayerLevel(i int) *EncounterDifficultyThresholdUpdateOne {
+	edtuo.mutation.ResetPlayerLevel()
+	edtuo.mutation.SetPlayerLevel(i)
+	return edtuo
+}
+
+// SetNillablePlayerLevel sets the "player_level" field if the given value is not nil.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) SetNillablePlayerLevel(i *int) *EncounterDifficultyThresholdUpdateOne {
+	if i != nil {
+		edtuo.SetPlayerLevel(*i)
+	}
+	return edtuo
+}
+
+// AddPlayerLevel adds i to the "player_level" field.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) AddPlayerLevel(i int) *EncounterDifficultyThresholdUpdateOne {
+	edtuo.mutation.AddPlayerLevel(i)
+	return edtuo
+}
+
+// SetExp sets the "exp" field.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) SetExp(i int64) *EncounterDifficultyThresholdUpdateOne {
+	edtuo.mutation.ResetExp()
+	edtuo.mutation.SetExp(i)
+	return edtuo
+}
+
+// SetNillableExp sets the "exp" field if the given value is not nil.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) SetNillableExp(i *int64) *EncounterDifficultyThresholdUpdateOne {
+	if i != nil {
+		edtuo.SetExp(*i)
+	}
+	return edtuo
+}
+
+// AddExp adds i to the "exp" field.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) AddExp(i int64) *EncounterDifficultyThresholdUpdateOne {
+	edtuo.mutation.AddExp(i)
+	return edtuo
+}
+
+// SetDifficultyID sets the "difficulty" edge to the Difficulty entity by ID.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) SetDifficultyID(id uuid.UUID) *EncounterDifficultyThresholdUpdateOne {
+	edtuo.mutation.SetDifficultyID(id)
+	return edtuo
+}
+
+// SetNillableDifficultyID sets the "difficulty" edge to the Difficulty entity by ID if the given value is not nil.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) SetNillableDifficultyID(id *uuid.UUID) *EncounterDifficultyThresholdUpdateOne {
+	if id != nil {
+		edtuo = edtuo.SetDifficultyID(*id)
+	}
+	return edtuo
+}
+
+// SetDifficulty sets the "difficulty" edge to the Difficulty entity.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) SetDifficulty(d *Difficulty) *EncounterDifficultyThresholdUpdateOne {
+	return edtuo.SetDifficultyID(d.ID)
+}
+
 // Mutation returns the EncounterDifficultyThresholdMutation object of the builder.
 func (edtuo *EncounterDifficultyThresholdUpdateOne) Mutation() *EncounterDifficultyThresholdMutation {
 	return edtuo.mutation
+}
+
+// ClearDifficulty clears the "difficulty" edge to the Difficulty entity.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) ClearDifficulty() *EncounterDifficultyThresholdUpdateOne {
+	edtuo.mutation.ClearDifficulty()
+	return edtuo
 }
 
 // Where appends a list predicates to the EncounterDifficultyThresholdUpdate builder.
@@ -133,8 +328,26 @@ func (edtuo *EncounterDifficultyThresholdUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (edtuo *EncounterDifficultyThresholdUpdateOne) check() error {
+	if v, ok := edtuo.mutation.PlayerLevel(); ok {
+		if err := encounterdifficultythreshold.PlayerLevelValidator(v); err != nil {
+			return &ValidationError{Name: "player_level", err: fmt.Errorf(`ent: validator failed for field "EncounterDifficultyThreshold.player_level": %w`, err)}
+		}
+	}
+	if v, ok := edtuo.mutation.Exp(); ok {
+		if err := encounterdifficultythreshold.ExpValidator(v); err != nil {
+			return &ValidationError{Name: "exp", err: fmt.Errorf(`ent: validator failed for field "EncounterDifficultyThreshold.exp": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (edtuo *EncounterDifficultyThresholdUpdateOne) sqlSave(ctx context.Context) (_node *EncounterDifficultyThreshold, err error) {
-	_spec := sqlgraph.NewUpdateSpec(encounterdifficultythreshold.Table, encounterdifficultythreshold.Columns, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeInt))
+	if err := edtuo.check(); err != nil {
+		return _node, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(encounterdifficultythreshold.Table, encounterdifficultythreshold.Columns, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID))
 	id, ok := edtuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "EncounterDifficultyThreshold.id" for update`)}
@@ -158,6 +371,47 @@ func (edtuo *EncounterDifficultyThresholdUpdateOne) sqlSave(ctx context.Context)
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := edtuo.mutation.PlayerLevel(); ok {
+		_spec.SetField(encounterdifficultythreshold.FieldPlayerLevel, field.TypeInt, value)
+	}
+	if value, ok := edtuo.mutation.AddedPlayerLevel(); ok {
+		_spec.AddField(encounterdifficultythreshold.FieldPlayerLevel, field.TypeInt, value)
+	}
+	if value, ok := edtuo.mutation.Exp(); ok {
+		_spec.SetField(encounterdifficultythreshold.FieldExp, field.TypeInt64, value)
+	}
+	if value, ok := edtuo.mutation.AddedExp(); ok {
+		_spec.AddField(encounterdifficultythreshold.FieldExp, field.TypeInt64, value)
+	}
+	if edtuo.mutation.DifficultyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounterdifficultythreshold.DifficultyTable,
+			Columns: []string{encounterdifficultythreshold.DifficultyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := edtuo.mutation.DifficultyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounterdifficultythreshold.DifficultyTable,
+			Columns: []string{encounterdifficultythreshold.DifficultyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &EncounterDifficultyThreshold{config: edtuo.config}
 	_spec.Assign = _node.assignValues

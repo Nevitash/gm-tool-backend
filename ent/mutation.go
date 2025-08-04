@@ -10,8 +10,10 @@ import (
 	"gm-tool-backend/ent/combatant"
 	"gm-tool-backend/ent/crspellslot"
 	"gm-tool-backend/ent/crstat"
+	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
+	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/ent/predicate"
 	"gm-tool-backend/ent/user"
 	"sync"
@@ -3035,13 +3037,17 @@ func (m *CrStatMutation) ResetEdge(name string) error {
 // DifficultyMutation represents an operation that mutates the Difficulty nodes in the graph.
 type DifficultyMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Difficulty, error)
-	predicates    []predicate.Difficulty
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	name              *string
+	clearedFields     map[string]struct{}
+	thresholds        map[uuid.UUID]struct{}
+	removedthresholds map[uuid.UUID]struct{}
+	clearedthresholds bool
+	done              bool
+	oldValue          func(context.Context) (*Difficulty, error)
+	predicates        []predicate.Difficulty
 }
 
 var _ ent.Mutation = (*DifficultyMutation)(nil)
@@ -3064,7 +3070,7 @@ func newDifficultyMutation(c config, op Op, opts ...difficultyOption) *Difficult
 }
 
 // withDifficultyID sets the ID field of the mutation.
-func withDifficultyID(id int) difficultyOption {
+func withDifficultyID(id uuid.UUID) difficultyOption {
 	return func(m *DifficultyMutation) {
 		var (
 			err   error
@@ -3114,9 +3120,15 @@ func (m DifficultyMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Difficulty entities.
+func (m *DifficultyMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *DifficultyMutation) ID() (id int, exists bool) {
+func (m *DifficultyMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -3127,12 +3139,12 @@ func (m *DifficultyMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *DifficultyMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *DifficultyMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -3140,6 +3152,96 @@ func (m *DifficultyMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetName sets the "name" field.
+func (m *DifficultyMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *DifficultyMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Difficulty entity.
+// If the Difficulty object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DifficultyMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *DifficultyMutation) ResetName() {
+	m.name = nil
+}
+
+// AddThresholdIDs adds the "thresholds" edge to the EncounterDifficultyThreshold entity by ids.
+func (m *DifficultyMutation) AddThresholdIDs(ids ...uuid.UUID) {
+	if m.thresholds == nil {
+		m.thresholds = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.thresholds[ids[i]] = struct{}{}
+	}
+}
+
+// ClearThresholds clears the "thresholds" edge to the EncounterDifficultyThreshold entity.
+func (m *DifficultyMutation) ClearThresholds() {
+	m.clearedthresholds = true
+}
+
+// ThresholdsCleared reports if the "thresholds" edge to the EncounterDifficultyThreshold entity was cleared.
+func (m *DifficultyMutation) ThresholdsCleared() bool {
+	return m.clearedthresholds
+}
+
+// RemoveThresholdIDs removes the "thresholds" edge to the EncounterDifficultyThreshold entity by IDs.
+func (m *DifficultyMutation) RemoveThresholdIDs(ids ...uuid.UUID) {
+	if m.removedthresholds == nil {
+		m.removedthresholds = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.thresholds, ids[i])
+		m.removedthresholds[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedThresholds returns the removed IDs of the "thresholds" edge to the EncounterDifficultyThreshold entity.
+func (m *DifficultyMutation) RemovedThresholdsIDs() (ids []uuid.UUID) {
+	for id := range m.removedthresholds {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ThresholdsIDs returns the "thresholds" edge IDs in the mutation.
+func (m *DifficultyMutation) ThresholdsIDs() (ids []uuid.UUID) {
+	for id := range m.thresholds {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetThresholds resets all changes to the "thresholds" edge.
+func (m *DifficultyMutation) ResetThresholds() {
+	m.thresholds = nil
+	m.clearedthresholds = false
+	m.removedthresholds = nil
 }
 
 // Where appends a list predicates to the DifficultyMutation builder.
@@ -3176,7 +3278,10 @@ func (m *DifficultyMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DifficultyMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+	fields := make([]string, 0, 1)
+	if m.name != nil {
+		fields = append(fields, difficulty.FieldName)
+	}
 	return fields
 }
 
@@ -3184,6 +3289,10 @@ func (m *DifficultyMutation) Fields() []string {
 // return value indicates that this field was not set, or was not defined in the
 // schema.
 func (m *DifficultyMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case difficulty.FieldName:
+		return m.Name()
+	}
 	return nil, false
 }
 
@@ -3191,6 +3300,10 @@ func (m *DifficultyMutation) Field(name string) (ent.Value, bool) {
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *DifficultyMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case difficulty.FieldName:
+		return m.OldName(ctx)
+	}
 	return nil, fmt.Errorf("unknown Difficulty field %s", name)
 }
 
@@ -3199,6 +3312,13 @@ func (m *DifficultyMutation) OldField(ctx context.Context, name string) (ent.Val
 // type.
 func (m *DifficultyMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case difficulty.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Difficulty field %s", name)
 }
@@ -3220,6 +3340,8 @@ func (m *DifficultyMutation) AddedField(name string) (ent.Value, bool) {
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
 func (m *DifficultyMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Difficulty numeric field %s", name)
 }
 
@@ -3245,54 +3367,95 @@ func (m *DifficultyMutation) ClearField(name string) error {
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
 func (m *DifficultyMutation) ResetField(name string) error {
+	switch name {
+	case difficulty.FieldName:
+		m.ResetName()
+		return nil
+	}
 	return fmt.Errorf("unknown Difficulty field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DifficultyMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.thresholds != nil {
+		edges = append(edges, difficulty.EdgeThresholds)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *DifficultyMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case difficulty.EdgeThresholds:
+		ids := make([]ent.Value, 0, len(m.thresholds))
+		for id := range m.thresholds {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DifficultyMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedthresholds != nil {
+		edges = append(edges, difficulty.EdgeThresholds)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *DifficultyMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case difficulty.EdgeThresholds:
+		ids := make([]ent.Value, 0, len(m.removedthresholds))
+		for id := range m.removedthresholds {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DifficultyMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedthresholds {
+		edges = append(edges, difficulty.EdgeThresholds)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *DifficultyMutation) EdgeCleared(name string) bool {
+	switch name {
+	case difficulty.EdgeThresholds:
+		return m.clearedthresholds
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *DifficultyMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Difficulty unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *DifficultyMutation) ResetEdge(name string) error {
+	switch name {
+	case difficulty.EdgeThresholds:
+		m.ResetThresholds()
+		return nil
+	}
 	return fmt.Errorf("unknown Difficulty edge %s", name)
 }
 
@@ -4426,13 +4589,19 @@ func (m *EncounterCombatantMutation) ResetEdge(name string) error {
 // EncounterDifficultyThresholdMutation represents an operation that mutates the EncounterDifficultyThreshold nodes in the graph.
 type EncounterDifficultyThresholdMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*EncounterDifficultyThreshold, error)
-	predicates    []predicate.EncounterDifficultyThreshold
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	player_level      *int
+	addplayer_level   *int
+	exp               *int64
+	addexp            *int64
+	clearedFields     map[string]struct{}
+	difficulty        *uuid.UUID
+	cleareddifficulty bool
+	done              bool
+	oldValue          func(context.Context) (*EncounterDifficultyThreshold, error)
+	predicates        []predicate.EncounterDifficultyThreshold
 }
 
 var _ ent.Mutation = (*EncounterDifficultyThresholdMutation)(nil)
@@ -4455,7 +4624,7 @@ func newEncounterDifficultyThresholdMutation(c config, op Op, opts ...encounterd
 }
 
 // withEncounterDifficultyThresholdID sets the ID field of the mutation.
-func withEncounterDifficultyThresholdID(id int) encounterdifficultythresholdOption {
+func withEncounterDifficultyThresholdID(id uuid.UUID) encounterdifficultythresholdOption {
 	return func(m *EncounterDifficultyThresholdMutation) {
 		var (
 			err   error
@@ -4505,9 +4674,15 @@ func (m EncounterDifficultyThresholdMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of EncounterDifficultyThreshold entities.
+func (m *EncounterDifficultyThresholdMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *EncounterDifficultyThresholdMutation) ID() (id int, exists bool) {
+func (m *EncounterDifficultyThresholdMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -4518,12 +4693,12 @@ func (m *EncounterDifficultyThresholdMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *EncounterDifficultyThresholdMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *EncounterDifficultyThresholdMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -4531,6 +4706,157 @@ func (m *EncounterDifficultyThresholdMutation) IDs(ctx context.Context) ([]int, 
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetPlayerLevel sets the "player_level" field.
+func (m *EncounterDifficultyThresholdMutation) SetPlayerLevel(i int) {
+	m.player_level = &i
+	m.addplayer_level = nil
+}
+
+// PlayerLevel returns the value of the "player_level" field in the mutation.
+func (m *EncounterDifficultyThresholdMutation) PlayerLevel() (r int, exists bool) {
+	v := m.player_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlayerLevel returns the old "player_level" field's value of the EncounterDifficultyThreshold entity.
+// If the EncounterDifficultyThreshold object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EncounterDifficultyThresholdMutation) OldPlayerLevel(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlayerLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlayerLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlayerLevel: %w", err)
+	}
+	return oldValue.PlayerLevel, nil
+}
+
+// AddPlayerLevel adds i to the "player_level" field.
+func (m *EncounterDifficultyThresholdMutation) AddPlayerLevel(i int) {
+	if m.addplayer_level != nil {
+		*m.addplayer_level += i
+	} else {
+		m.addplayer_level = &i
+	}
+}
+
+// AddedPlayerLevel returns the value that was added to the "player_level" field in this mutation.
+func (m *EncounterDifficultyThresholdMutation) AddedPlayerLevel() (r int, exists bool) {
+	v := m.addplayer_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPlayerLevel resets all changes to the "player_level" field.
+func (m *EncounterDifficultyThresholdMutation) ResetPlayerLevel() {
+	m.player_level = nil
+	m.addplayer_level = nil
+}
+
+// SetExp sets the "exp" field.
+func (m *EncounterDifficultyThresholdMutation) SetExp(i int64) {
+	m.exp = &i
+	m.addexp = nil
+}
+
+// Exp returns the value of the "exp" field in the mutation.
+func (m *EncounterDifficultyThresholdMutation) Exp() (r int64, exists bool) {
+	v := m.exp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExp returns the old "exp" field's value of the EncounterDifficultyThreshold entity.
+// If the EncounterDifficultyThreshold object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EncounterDifficultyThresholdMutation) OldExp(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExp is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExp requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExp: %w", err)
+	}
+	return oldValue.Exp, nil
+}
+
+// AddExp adds i to the "exp" field.
+func (m *EncounterDifficultyThresholdMutation) AddExp(i int64) {
+	if m.addexp != nil {
+		*m.addexp += i
+	} else {
+		m.addexp = &i
+	}
+}
+
+// AddedExp returns the value that was added to the "exp" field in this mutation.
+func (m *EncounterDifficultyThresholdMutation) AddedExp() (r int64, exists bool) {
+	v := m.addexp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetExp resets all changes to the "exp" field.
+func (m *EncounterDifficultyThresholdMutation) ResetExp() {
+	m.exp = nil
+	m.addexp = nil
+}
+
+// SetDifficultyID sets the "difficulty" edge to the Difficulty entity by id.
+func (m *EncounterDifficultyThresholdMutation) SetDifficultyID(id uuid.UUID) {
+	m.difficulty = &id
+}
+
+// ClearDifficulty clears the "difficulty" edge to the Difficulty entity.
+func (m *EncounterDifficultyThresholdMutation) ClearDifficulty() {
+	m.cleareddifficulty = true
+}
+
+// DifficultyCleared reports if the "difficulty" edge to the Difficulty entity was cleared.
+func (m *EncounterDifficultyThresholdMutation) DifficultyCleared() bool {
+	return m.cleareddifficulty
+}
+
+// DifficultyID returns the "difficulty" edge ID in the mutation.
+func (m *EncounterDifficultyThresholdMutation) DifficultyID() (id uuid.UUID, exists bool) {
+	if m.difficulty != nil {
+		return *m.difficulty, true
+	}
+	return
+}
+
+// DifficultyIDs returns the "difficulty" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DifficultyID instead. It exists only for internal usage by the builders.
+func (m *EncounterDifficultyThresholdMutation) DifficultyIDs() (ids []uuid.UUID) {
+	if id := m.difficulty; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDifficulty resets all changes to the "difficulty" edge.
+func (m *EncounterDifficultyThresholdMutation) ResetDifficulty() {
+	m.difficulty = nil
+	m.cleareddifficulty = false
 }
 
 // Where appends a list predicates to the EncounterDifficultyThresholdMutation builder.
@@ -4567,7 +4893,13 @@ func (m *EncounterDifficultyThresholdMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EncounterDifficultyThresholdMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+	fields := make([]string, 0, 2)
+	if m.player_level != nil {
+		fields = append(fields, encounterdifficultythreshold.FieldPlayerLevel)
+	}
+	if m.exp != nil {
+		fields = append(fields, encounterdifficultythreshold.FieldExp)
+	}
 	return fields
 }
 
@@ -4575,6 +4907,12 @@ func (m *EncounterDifficultyThresholdMutation) Fields() []string {
 // return value indicates that this field was not set, or was not defined in the
 // schema.
 func (m *EncounterDifficultyThresholdMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case encounterdifficultythreshold.FieldPlayerLevel:
+		return m.PlayerLevel()
+	case encounterdifficultythreshold.FieldExp:
+		return m.Exp()
+	}
 	return nil, false
 }
 
@@ -4582,6 +4920,12 @@ func (m *EncounterDifficultyThresholdMutation) Field(name string) (ent.Value, bo
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *EncounterDifficultyThresholdMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case encounterdifficultythreshold.FieldPlayerLevel:
+		return m.OldPlayerLevel(ctx)
+	case encounterdifficultythreshold.FieldExp:
+		return m.OldExp(ctx)
+	}
 	return nil, fmt.Errorf("unknown EncounterDifficultyThreshold field %s", name)
 }
 
@@ -4590,6 +4934,20 @@ func (m *EncounterDifficultyThresholdMutation) OldField(ctx context.Context, nam
 // type.
 func (m *EncounterDifficultyThresholdMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case encounterdifficultythreshold.FieldPlayerLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlayerLevel(v)
+		return nil
+	case encounterdifficultythreshold.FieldExp:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExp(v)
+		return nil
 	}
 	return fmt.Errorf("unknown EncounterDifficultyThreshold field %s", name)
 }
@@ -4597,13 +4955,26 @@ func (m *EncounterDifficultyThresholdMutation) SetField(name string, value ent.V
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *EncounterDifficultyThresholdMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addplayer_level != nil {
+		fields = append(fields, encounterdifficultythreshold.FieldPlayerLevel)
+	}
+	if m.addexp != nil {
+		fields = append(fields, encounterdifficultythreshold.FieldExp)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *EncounterDifficultyThresholdMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case encounterdifficultythreshold.FieldPlayerLevel:
+		return m.AddedPlayerLevel()
+	case encounterdifficultythreshold.FieldExp:
+		return m.AddedExp()
+	}
 	return nil, false
 }
 
@@ -4611,6 +4982,22 @@ func (m *EncounterDifficultyThresholdMutation) AddedField(name string) (ent.Valu
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
 func (m *EncounterDifficultyThresholdMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case encounterdifficultythreshold.FieldPlayerLevel:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPlayerLevel(v)
+		return nil
+	case encounterdifficultythreshold.FieldExp:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExp(v)
+		return nil
+	}
 	return fmt.Errorf("unknown EncounterDifficultyThreshold numeric field %s", name)
 }
 
@@ -4636,24 +5023,41 @@ func (m *EncounterDifficultyThresholdMutation) ClearField(name string) error {
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
 func (m *EncounterDifficultyThresholdMutation) ResetField(name string) error {
+	switch name {
+	case encounterdifficultythreshold.FieldPlayerLevel:
+		m.ResetPlayerLevel()
+		return nil
+	case encounterdifficultythreshold.FieldExp:
+		m.ResetExp()
+		return nil
+	}
 	return fmt.Errorf("unknown EncounterDifficultyThreshold field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EncounterDifficultyThresholdMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.difficulty != nil {
+		edges = append(edges, encounterdifficultythreshold.EdgeDifficulty)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *EncounterDifficultyThresholdMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case encounterdifficultythreshold.EdgeDifficulty:
+		if id := m.difficulty; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EncounterDifficultyThresholdMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -4665,25 +5069,42 @@ func (m *EncounterDifficultyThresholdMutation) RemovedIDs(name string) []ent.Val
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EncounterDifficultyThresholdMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.cleareddifficulty {
+		edges = append(edges, encounterdifficultythreshold.EdgeDifficulty)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *EncounterDifficultyThresholdMutation) EdgeCleared(name string) bool {
+	switch name {
+	case encounterdifficultythreshold.EdgeDifficulty:
+		return m.cleareddifficulty
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *EncounterDifficultyThresholdMutation) ClearEdge(name string) error {
+	switch name {
+	case encounterdifficultythreshold.EdgeDifficulty:
+		m.ClearDifficulty()
+		return nil
+	}
 	return fmt.Errorf("unknown EncounterDifficultyThreshold unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *EncounterDifficultyThresholdMutation) ResetEdge(name string) error {
+	switch name {
+	case encounterdifficultythreshold.EdgeDifficulty:
+		m.ResetDifficulty()
+		return nil
+	}
 	return fmt.Errorf("unknown EncounterDifficultyThreshold edge %s", name)
 }
 

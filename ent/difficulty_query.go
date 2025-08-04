@@ -4,8 +4,10 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"gm-tool-backend/ent/difficulty"
+	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/ent/predicate"
 	"math"
 
@@ -13,15 +15,17 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // DifficultyQuery is the builder for querying Difficulty entities.
 type DifficultyQuery struct {
 	config
-	ctx        *QueryContext
-	order      []difficulty.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Difficulty
+	ctx            *QueryContext
+	order          []difficulty.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Difficulty
+	withThresholds *EncounterDifficultyThresholdQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (dq *DifficultyQuery) Order(o ...difficulty.OrderOption) *DifficultyQuery {
 	return dq
 }
 
+// QueryThresholds chains the current query on the "thresholds" edge.
+func (dq *DifficultyQuery) QueryThresholds() *EncounterDifficultyThresholdQuery {
+	query := (&EncounterDifficultyThresholdClient{config: dq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(difficulty.Table, difficulty.FieldID, selector),
+			sqlgraph.To(encounterdifficultythreshold.Table, encounterdifficultythreshold.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, difficulty.ThresholdsTable, difficulty.ThresholdsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Difficulty entity from the query.
 // Returns a *NotFoundError when no Difficulty was found.
 func (dq *DifficultyQuery) First(ctx context.Context) (*Difficulty, error) {
@@ -82,8 +108,8 @@ func (dq *DifficultyQuery) FirstX(ctx context.Context) *Difficulty {
 
 // FirstID returns the first Difficulty ID from the query.
 // Returns a *NotFoundError when no Difficulty ID was found.
-func (dq *DifficultyQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (dq *DifficultyQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = dq.Limit(1).IDs(setContextOp(ctx, dq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -95,7 +121,7 @@ func (dq *DifficultyQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (dq *DifficultyQuery) FirstIDX(ctx context.Context) int {
+func (dq *DifficultyQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := dq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -133,8 +159,8 @@ func (dq *DifficultyQuery) OnlyX(ctx context.Context) *Difficulty {
 // OnlyID is like Only, but returns the only Difficulty ID in the query.
 // Returns a *NotSingularError when more than one Difficulty ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (dq *DifficultyQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (dq *DifficultyQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = dq.Limit(2).IDs(setContextOp(ctx, dq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -150,7 +176,7 @@ func (dq *DifficultyQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (dq *DifficultyQuery) OnlyIDX(ctx context.Context) int {
+func (dq *DifficultyQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := dq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -178,7 +204,7 @@ func (dq *DifficultyQuery) AllX(ctx context.Context) []*Difficulty {
 }
 
 // IDs executes the query and returns a list of Difficulty IDs.
-func (dq *DifficultyQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (dq *DifficultyQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if dq.ctx.Unique == nil && dq.path != nil {
 		dq.Unique(true)
 	}
@@ -190,7 +216,7 @@ func (dq *DifficultyQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (dq *DifficultyQuery) IDsX(ctx context.Context) []int {
+func (dq *DifficultyQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := dq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -245,19 +271,43 @@ func (dq *DifficultyQuery) Clone() *DifficultyQuery {
 		return nil
 	}
 	return &DifficultyQuery{
-		config:     dq.config,
-		ctx:        dq.ctx.Clone(),
-		order:      append([]difficulty.OrderOption{}, dq.order...),
-		inters:     append([]Interceptor{}, dq.inters...),
-		predicates: append([]predicate.Difficulty{}, dq.predicates...),
+		config:         dq.config,
+		ctx:            dq.ctx.Clone(),
+		order:          append([]difficulty.OrderOption{}, dq.order...),
+		inters:         append([]Interceptor{}, dq.inters...),
+		predicates:     append([]predicate.Difficulty{}, dq.predicates...),
+		withThresholds: dq.withThresholds.Clone(),
 		// clone intermediate query.
 		sql:  dq.sql.Clone(),
 		path: dq.path,
 	}
 }
 
+// WithThresholds tells the query-builder to eager-load the nodes that are connected to
+// the "thresholds" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DifficultyQuery) WithThresholds(opts ...func(*EncounterDifficultyThresholdQuery)) *DifficultyQuery {
+	query := (&EncounterDifficultyThresholdClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withThresholds = query
+	return dq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		Name string `json:"name,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Difficulty.Query().
+//		GroupBy(difficulty.FieldName).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (dq *DifficultyQuery) GroupBy(field string, fields ...string) *DifficultyGroupBy {
 	dq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &DifficultyGroupBy{build: dq}
@@ -269,6 +319,16 @@ func (dq *DifficultyQuery) GroupBy(field string, fields ...string) *DifficultyGr
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		Name string `json:"name,omitempty"`
+//	}
+//
+//	client.Difficulty.Query().
+//		Select(difficulty.FieldName).
+//		Scan(ctx, &v)
 func (dq *DifficultyQuery) Select(fields ...string) *DifficultySelect {
 	dq.ctx.Fields = append(dq.ctx.Fields, fields...)
 	sbuild := &DifficultySelect{DifficultyQuery: dq}
@@ -310,8 +370,11 @@ func (dq *DifficultyQuery) prepareQuery(ctx context.Context) error {
 
 func (dq *DifficultyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Difficulty, error) {
 	var (
-		nodes = []*Difficulty{}
-		_spec = dq.querySpec()
+		nodes       = []*Difficulty{}
+		_spec       = dq.querySpec()
+		loadedTypes = [1]bool{
+			dq.withThresholds != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Difficulty).scanValues(nil, columns)
@@ -319,6 +382,7 @@ func (dq *DifficultyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*D
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Difficulty{config: dq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -330,7 +394,48 @@ func (dq *DifficultyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*D
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := dq.withThresholds; query != nil {
+		if err := dq.loadThresholds(ctx, query, nodes,
+			func(n *Difficulty) { n.Edges.Thresholds = []*EncounterDifficultyThreshold{} },
+			func(n *Difficulty, e *EncounterDifficultyThreshold) {
+				n.Edges.Thresholds = append(n.Edges.Thresholds, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (dq *DifficultyQuery) loadThresholds(ctx context.Context, query *EncounterDifficultyThresholdQuery, nodes []*Difficulty, init func(*Difficulty), assign func(*Difficulty, *EncounterDifficultyThreshold)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Difficulty)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.EncounterDifficultyThreshold(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(difficulty.ThresholdsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.difficulty_thresholds
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "difficulty_thresholds" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "difficulty_thresholds" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (dq *DifficultyQuery) sqlCount(ctx context.Context) (int, error) {
@@ -343,7 +448,7 @@ func (dq *DifficultyQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (dq *DifficultyQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(difficulty.Table, difficulty.Columns, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(difficulty.Table, difficulty.Columns, sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID))
 	_spec.From = dq.sql
 	if unique := dq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"fmt"
+	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/ent/predicate"
 	"math"
@@ -13,15 +14,18 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // EncounterDifficultyThresholdQuery is the builder for querying EncounterDifficultyThreshold entities.
 type EncounterDifficultyThresholdQuery struct {
 	config
-	ctx        *QueryContext
-	order      []encounterdifficultythreshold.OrderOption
-	inters     []Interceptor
-	predicates []predicate.EncounterDifficultyThreshold
+	ctx            *QueryContext
+	order          []encounterdifficultythreshold.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.EncounterDifficultyThreshold
+	withDifficulty *DifficultyQuery
+	withFKs        bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (edtq *EncounterDifficultyThresholdQuery) Order(o ...encounterdifficultythr
 	return edtq
 }
 
+// QueryDifficulty chains the current query on the "difficulty" edge.
+func (edtq *EncounterDifficultyThresholdQuery) QueryDifficulty() *DifficultyQuery {
+	query := (&DifficultyClient{config: edtq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := edtq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := edtq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(encounterdifficultythreshold.Table, encounterdifficultythreshold.FieldID, selector),
+			sqlgraph.To(difficulty.Table, difficulty.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, encounterdifficultythreshold.DifficultyTable, encounterdifficultythreshold.DifficultyColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(edtq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first EncounterDifficultyThreshold entity from the query.
 // Returns a *NotFoundError when no EncounterDifficultyThreshold was found.
 func (edtq *EncounterDifficultyThresholdQuery) First(ctx context.Context) (*EncounterDifficultyThreshold, error) {
@@ -82,8 +108,8 @@ func (edtq *EncounterDifficultyThresholdQuery) FirstX(ctx context.Context) *Enco
 
 // FirstID returns the first EncounterDifficultyThreshold ID from the query.
 // Returns a *NotFoundError when no EncounterDifficultyThreshold ID was found.
-func (edtq *EncounterDifficultyThresholdQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (edtq *EncounterDifficultyThresholdQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = edtq.Limit(1).IDs(setContextOp(ctx, edtq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -95,7 +121,7 @@ func (edtq *EncounterDifficultyThresholdQuery) FirstID(ctx context.Context) (id 
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (edtq *EncounterDifficultyThresholdQuery) FirstIDX(ctx context.Context) int {
+func (edtq *EncounterDifficultyThresholdQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := edtq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -133,8 +159,8 @@ func (edtq *EncounterDifficultyThresholdQuery) OnlyX(ctx context.Context) *Encou
 // OnlyID is like Only, but returns the only EncounterDifficultyThreshold ID in the query.
 // Returns a *NotSingularError when more than one EncounterDifficultyThreshold ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (edtq *EncounterDifficultyThresholdQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (edtq *EncounterDifficultyThresholdQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = edtq.Limit(2).IDs(setContextOp(ctx, edtq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -150,7 +176,7 @@ func (edtq *EncounterDifficultyThresholdQuery) OnlyID(ctx context.Context) (id i
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (edtq *EncounterDifficultyThresholdQuery) OnlyIDX(ctx context.Context) int {
+func (edtq *EncounterDifficultyThresholdQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := edtq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -178,7 +204,7 @@ func (edtq *EncounterDifficultyThresholdQuery) AllX(ctx context.Context) []*Enco
 }
 
 // IDs executes the query and returns a list of EncounterDifficultyThreshold IDs.
-func (edtq *EncounterDifficultyThresholdQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (edtq *EncounterDifficultyThresholdQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if edtq.ctx.Unique == nil && edtq.path != nil {
 		edtq.Unique(true)
 	}
@@ -190,7 +216,7 @@ func (edtq *EncounterDifficultyThresholdQuery) IDs(ctx context.Context) (ids []i
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (edtq *EncounterDifficultyThresholdQuery) IDsX(ctx context.Context) []int {
+func (edtq *EncounterDifficultyThresholdQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := edtq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -245,19 +271,43 @@ func (edtq *EncounterDifficultyThresholdQuery) Clone() *EncounterDifficultyThres
 		return nil
 	}
 	return &EncounterDifficultyThresholdQuery{
-		config:     edtq.config,
-		ctx:        edtq.ctx.Clone(),
-		order:      append([]encounterdifficultythreshold.OrderOption{}, edtq.order...),
-		inters:     append([]Interceptor{}, edtq.inters...),
-		predicates: append([]predicate.EncounterDifficultyThreshold{}, edtq.predicates...),
+		config:         edtq.config,
+		ctx:            edtq.ctx.Clone(),
+		order:          append([]encounterdifficultythreshold.OrderOption{}, edtq.order...),
+		inters:         append([]Interceptor{}, edtq.inters...),
+		predicates:     append([]predicate.EncounterDifficultyThreshold{}, edtq.predicates...),
+		withDifficulty: edtq.withDifficulty.Clone(),
 		// clone intermediate query.
 		sql:  edtq.sql.Clone(),
 		path: edtq.path,
 	}
 }
 
+// WithDifficulty tells the query-builder to eager-load the nodes that are connected to
+// the "difficulty" edge. The optional arguments are used to configure the query builder of the edge.
+func (edtq *EncounterDifficultyThresholdQuery) WithDifficulty(opts ...func(*DifficultyQuery)) *EncounterDifficultyThresholdQuery {
+	query := (&DifficultyClient{config: edtq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	edtq.withDifficulty = query
+	return edtq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		PlayerLevel int `json:"player_level,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.EncounterDifficultyThreshold.Query().
+//		GroupBy(encounterdifficultythreshold.FieldPlayerLevel).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (edtq *EncounterDifficultyThresholdQuery) GroupBy(field string, fields ...string) *EncounterDifficultyThresholdGroupBy {
 	edtq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &EncounterDifficultyThresholdGroupBy{build: edtq}
@@ -269,6 +319,16 @@ func (edtq *EncounterDifficultyThresholdQuery) GroupBy(field string, fields ...s
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		PlayerLevel int `json:"player_level,omitempty"`
+//	}
+//
+//	client.EncounterDifficultyThreshold.Query().
+//		Select(encounterdifficultythreshold.FieldPlayerLevel).
+//		Scan(ctx, &v)
 func (edtq *EncounterDifficultyThresholdQuery) Select(fields ...string) *EncounterDifficultyThresholdSelect {
 	edtq.ctx.Fields = append(edtq.ctx.Fields, fields...)
 	sbuild := &EncounterDifficultyThresholdSelect{EncounterDifficultyThresholdQuery: edtq}
@@ -310,15 +370,26 @@ func (edtq *EncounterDifficultyThresholdQuery) prepareQuery(ctx context.Context)
 
 func (edtq *EncounterDifficultyThresholdQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*EncounterDifficultyThreshold, error) {
 	var (
-		nodes = []*EncounterDifficultyThreshold{}
-		_spec = edtq.querySpec()
+		nodes       = []*EncounterDifficultyThreshold{}
+		withFKs     = edtq.withFKs
+		_spec       = edtq.querySpec()
+		loadedTypes = [1]bool{
+			edtq.withDifficulty != nil,
+		}
 	)
+	if edtq.withDifficulty != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, encounterdifficultythreshold.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*EncounterDifficultyThreshold).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &EncounterDifficultyThreshold{config: edtq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -330,7 +401,46 @@ func (edtq *EncounterDifficultyThresholdQuery) sqlAll(ctx context.Context, hooks
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := edtq.withDifficulty; query != nil {
+		if err := edtq.loadDifficulty(ctx, query, nodes, nil,
+			func(n *EncounterDifficultyThreshold, e *Difficulty) { n.Edges.Difficulty = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (edtq *EncounterDifficultyThresholdQuery) loadDifficulty(ctx context.Context, query *DifficultyQuery, nodes []*EncounterDifficultyThreshold, init func(*EncounterDifficultyThreshold), assign func(*EncounterDifficultyThreshold, *Difficulty)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*EncounterDifficultyThreshold)
+	for i := range nodes {
+		if nodes[i].difficulty_thresholds == nil {
+			continue
+		}
+		fk := *nodes[i].difficulty_thresholds
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(difficulty.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "difficulty_thresholds" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (edtq *EncounterDifficultyThresholdQuery) sqlCount(ctx context.Context) (int, error) {
@@ -343,7 +453,7 @@ func (edtq *EncounterDifficultyThresholdQuery) sqlCount(ctx context.Context) (in
 }
 
 func (edtq *EncounterDifficultyThresholdQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(encounterdifficultythreshold.Table, encounterdifficultythreshold.Columns, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(encounterdifficultythreshold.Table, encounterdifficultythreshold.Columns, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID))
 	_spec.From = edtq.sql
 	if unique := edtq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

@@ -6,51 +6,146 @@ import (
 	"gm-tool-backend/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.Difficulty {
+func ID(id uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.Difficulty {
+func IDEQ(id uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.Difficulty {
+func IDNEQ(id uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.Difficulty {
+func IDIn(ids ...uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.Difficulty {
+func IDNotIn(ids ...uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.Difficulty {
+func IDGT(id uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.Difficulty {
+func IDGTE(id uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.Difficulty {
+func IDLT(id uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.Difficulty {
+func IDLTE(id uuid.UUID) predicate.Difficulty {
 	return predicate.Difficulty(sql.FieldLTE(FieldID, id))
+}
+
+// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
+func Name(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldEQ(FieldName, v))
+}
+
+// NameEQ applies the EQ predicate on the "name" field.
+func NameEQ(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldEQ(FieldName, v))
+}
+
+// NameNEQ applies the NEQ predicate on the "name" field.
+func NameNEQ(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldNEQ(FieldName, v))
+}
+
+// NameIn applies the In predicate on the "name" field.
+func NameIn(vs ...string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldIn(FieldName, vs...))
+}
+
+// NameNotIn applies the NotIn predicate on the "name" field.
+func NameNotIn(vs ...string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldNotIn(FieldName, vs...))
+}
+
+// NameGT applies the GT predicate on the "name" field.
+func NameGT(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldGT(FieldName, v))
+}
+
+// NameGTE applies the GTE predicate on the "name" field.
+func NameGTE(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldGTE(FieldName, v))
+}
+
+// NameLT applies the LT predicate on the "name" field.
+func NameLT(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldLT(FieldName, v))
+}
+
+// NameLTE applies the LTE predicate on the "name" field.
+func NameLTE(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldLTE(FieldName, v))
+}
+
+// NameContains applies the Contains predicate on the "name" field.
+func NameContains(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldContains(FieldName, v))
+}
+
+// NameHasPrefix applies the HasPrefix predicate on the "name" field.
+func NameHasPrefix(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldHasPrefix(FieldName, v))
+}
+
+// NameHasSuffix applies the HasSuffix predicate on the "name" field.
+func NameHasSuffix(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldHasSuffix(FieldName, v))
+}
+
+// NameEqualFold applies the EqualFold predicate on the "name" field.
+func NameEqualFold(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldEqualFold(FieldName, v))
+}
+
+// NameContainsFold applies the ContainsFold predicate on the "name" field.
+func NameContainsFold(v string) predicate.Difficulty {
+	return predicate.Difficulty(sql.FieldContainsFold(FieldName, v))
+}
+
+// HasThresholds applies the HasEdge predicate on the "thresholds" edge.
+func HasThresholds() predicate.Difficulty {
+	return predicate.Difficulty(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ThresholdsTable, ThresholdsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasThresholdsWith applies the HasEdge predicate on the "thresholds" edge with a given conditions (other predicates).
+func HasThresholdsWith(preds ...predicate.EncounterDifficultyThreshold) predicate.Difficulty {
+	return predicate.Difficulty(func(s *sql.Selector) {
+		step := newThresholdsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

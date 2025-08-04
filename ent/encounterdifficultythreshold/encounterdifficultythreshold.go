@@ -4,6 +4,8 @@ package encounterdifficultythreshold
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -11,13 +13,34 @@ const (
 	Label = "encounter_difficulty_threshold"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldPlayerLevel holds the string denoting the player_level field in the database.
+	FieldPlayerLevel = "player_level"
+	// FieldExp holds the string denoting the exp field in the database.
+	FieldExp = "exp"
+	// EdgeDifficulty holds the string denoting the difficulty edge name in mutations.
+	EdgeDifficulty = "difficulty"
 	// Table holds the table name of the encounterdifficultythreshold in the database.
 	Table = "encounter_difficulty_thresholds"
+	// DifficultyTable is the table that holds the difficulty relation/edge.
+	DifficultyTable = "encounter_difficulty_thresholds"
+	// DifficultyInverseTable is the table name for the Difficulty entity.
+	// It exists in this package in order to avoid circular dependency with the "difficulty" package.
+	DifficultyInverseTable = "difficulties"
+	// DifficultyColumn is the table column denoting the difficulty relation/edge.
+	DifficultyColumn = "difficulty_thresholds"
 )
 
 // Columns holds all SQL columns for encounterdifficultythreshold fields.
 var Columns = []string{
 	FieldID,
+	FieldPlayerLevel,
+	FieldExp,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "encounter_difficulty_thresholds"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"difficulty_thresholds",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -27,8 +50,22 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
+			return true
+		}
+	}
 	return false
 }
+
+var (
+	// PlayerLevelValidator is a validator for the "player_level" field. It is called by the builders before save.
+	PlayerLevelValidator func(int) error
+	// ExpValidator is a validator for the "exp" field. It is called by the builders before save.
+	ExpValidator func(int64) error
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
+)
 
 // OrderOption defines the ordering options for the EncounterDifficultyThreshold queries.
 type OrderOption func(*sql.Selector)
@@ -36,4 +73,28 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByPlayerLevel orders the results by the player_level field.
+func ByPlayerLevel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlayerLevel, opts...).ToFunc()
+}
+
+// ByExp orders the results by the exp field.
+func ByExp(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExp, opts...).ToFunc()
+}
+
+// ByDifficultyField orders the results by difficulty field.
+func ByDifficultyField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDifficultyStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newDifficultyStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DifficultyInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, DifficultyTable, DifficultyColumn),
+	)
 }

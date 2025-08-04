@@ -6,51 +6,166 @@ import (
 	"gm-tool-backend/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.EncounterDifficultyThreshold {
+func ID(id uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.EncounterDifficultyThreshold {
+func IDEQ(id uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.EncounterDifficultyThreshold {
+func IDNEQ(id uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.EncounterDifficultyThreshold {
+func IDIn(ids ...uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.EncounterDifficultyThreshold {
+func IDNotIn(ids ...uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.EncounterDifficultyThreshold {
+func IDGT(id uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.EncounterDifficultyThreshold {
+func IDGTE(id uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.EncounterDifficultyThreshold {
+func IDLT(id uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.EncounterDifficultyThreshold {
+func IDLTE(id uuid.UUID) predicate.EncounterDifficultyThreshold {
 	return predicate.EncounterDifficultyThreshold(sql.FieldLTE(FieldID, id))
+}
+
+// PlayerLevel applies equality check predicate on the "player_level" field. It's identical to PlayerLevelEQ.
+func PlayerLevel(v int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldEQ(FieldPlayerLevel, v))
+}
+
+// Exp applies equality check predicate on the "exp" field. It's identical to ExpEQ.
+func Exp(v int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldEQ(FieldExp, v))
+}
+
+// PlayerLevelEQ applies the EQ predicate on the "player_level" field.
+func PlayerLevelEQ(v int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldEQ(FieldPlayerLevel, v))
+}
+
+// PlayerLevelNEQ applies the NEQ predicate on the "player_level" field.
+func PlayerLevelNEQ(v int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldNEQ(FieldPlayerLevel, v))
+}
+
+// PlayerLevelIn applies the In predicate on the "player_level" field.
+func PlayerLevelIn(vs ...int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldIn(FieldPlayerLevel, vs...))
+}
+
+// PlayerLevelNotIn applies the NotIn predicate on the "player_level" field.
+func PlayerLevelNotIn(vs ...int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldNotIn(FieldPlayerLevel, vs...))
+}
+
+// PlayerLevelGT applies the GT predicate on the "player_level" field.
+func PlayerLevelGT(v int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldGT(FieldPlayerLevel, v))
+}
+
+// PlayerLevelGTE applies the GTE predicate on the "player_level" field.
+func PlayerLevelGTE(v int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldGTE(FieldPlayerLevel, v))
+}
+
+// PlayerLevelLT applies the LT predicate on the "player_level" field.
+func PlayerLevelLT(v int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldLT(FieldPlayerLevel, v))
+}
+
+// PlayerLevelLTE applies the LTE predicate on the "player_level" field.
+func PlayerLevelLTE(v int) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldLTE(FieldPlayerLevel, v))
+}
+
+// ExpEQ applies the EQ predicate on the "exp" field.
+func ExpEQ(v int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldEQ(FieldExp, v))
+}
+
+// ExpNEQ applies the NEQ predicate on the "exp" field.
+func ExpNEQ(v int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldNEQ(FieldExp, v))
+}
+
+// ExpIn applies the In predicate on the "exp" field.
+func ExpIn(vs ...int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldIn(FieldExp, vs...))
+}
+
+// ExpNotIn applies the NotIn predicate on the "exp" field.
+func ExpNotIn(vs ...int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldNotIn(FieldExp, vs...))
+}
+
+// ExpGT applies the GT predicate on the "exp" field.
+func ExpGT(v int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldGT(FieldExp, v))
+}
+
+// ExpGTE applies the GTE predicate on the "exp" field.
+func ExpGTE(v int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldGTE(FieldExp, v))
+}
+
+// ExpLT applies the LT predicate on the "exp" field.
+func ExpLT(v int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldLT(FieldExp, v))
+}
+
+// ExpLTE applies the LTE predicate on the "exp" field.
+func ExpLTE(v int64) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(sql.FieldLTE(FieldExp, v))
+}
+
+// HasDifficulty applies the HasEdge predicate on the "difficulty" edge.
+func HasDifficulty() predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, DifficultyTable, DifficultyColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDifficultyWith applies the HasEdge predicate on the "difficulty" edge with a given conditions (other predicates).
+func HasDifficultyWith(preds ...predicate.Difficulty) predicate.EncounterDifficultyThreshold {
+	return predicate.EncounterDifficultyThreshold(func(s *sql.Selector) {
+		step := newDifficultyStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

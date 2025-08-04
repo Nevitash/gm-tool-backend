@@ -946,7 +946,7 @@ func (c *DifficultyClient) UpdateOne(d *Difficulty) *DifficultyUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *DifficultyClient) UpdateOneID(id int) *DifficultyUpdateOne {
+func (c *DifficultyClient) UpdateOneID(id uuid.UUID) *DifficultyUpdateOne {
 	mutation := newDifficultyMutation(c.config, OpUpdateOne, withDifficultyID(id))
 	return &DifficultyUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -963,7 +963,7 @@ func (c *DifficultyClient) DeleteOne(d *Difficulty) *DifficultyDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *DifficultyClient) DeleteOneID(id int) *DifficultyDeleteOne {
+func (c *DifficultyClient) DeleteOneID(id uuid.UUID) *DifficultyDeleteOne {
 	builder := c.Delete().Where(difficulty.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -980,17 +980,33 @@ func (c *DifficultyClient) Query() *DifficultyQuery {
 }
 
 // Get returns a Difficulty entity by its id.
-func (c *DifficultyClient) Get(ctx context.Context, id int) (*Difficulty, error) {
+func (c *DifficultyClient) Get(ctx context.Context, id uuid.UUID) (*Difficulty, error) {
 	return c.Query().Where(difficulty.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *DifficultyClient) GetX(ctx context.Context, id int) *Difficulty {
+func (c *DifficultyClient) GetX(ctx context.Context, id uuid.UUID) *Difficulty {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryThresholds queries the thresholds edge of a Difficulty.
+func (c *DifficultyClient) QueryThresholds(d *Difficulty) *EncounterDifficultyThresholdQuery {
+	query := (&EncounterDifficultyThresholdClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(difficulty.Table, difficulty.FieldID, id),
+			sqlgraph.To(encounterdifficultythreshold.Table, encounterdifficultythreshold.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, difficulty.ThresholdsTable, difficulty.ThresholdsColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -1393,7 +1409,7 @@ func (c *EncounterDifficultyThresholdClient) UpdateOne(edt *EncounterDifficultyT
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *EncounterDifficultyThresholdClient) UpdateOneID(id int) *EncounterDifficultyThresholdUpdateOne {
+func (c *EncounterDifficultyThresholdClient) UpdateOneID(id uuid.UUID) *EncounterDifficultyThresholdUpdateOne {
 	mutation := newEncounterDifficultyThresholdMutation(c.config, OpUpdateOne, withEncounterDifficultyThresholdID(id))
 	return &EncounterDifficultyThresholdUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -1410,7 +1426,7 @@ func (c *EncounterDifficultyThresholdClient) DeleteOne(edt *EncounterDifficultyT
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *EncounterDifficultyThresholdClient) DeleteOneID(id int) *EncounterDifficultyThresholdDeleteOne {
+func (c *EncounterDifficultyThresholdClient) DeleteOneID(id uuid.UUID) *EncounterDifficultyThresholdDeleteOne {
 	builder := c.Delete().Where(encounterdifficultythreshold.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -1427,17 +1443,33 @@ func (c *EncounterDifficultyThresholdClient) Query() *EncounterDifficultyThresho
 }
 
 // Get returns a EncounterDifficultyThreshold entity by its id.
-func (c *EncounterDifficultyThresholdClient) Get(ctx context.Context, id int) (*EncounterDifficultyThreshold, error) {
+func (c *EncounterDifficultyThresholdClient) Get(ctx context.Context, id uuid.UUID) (*EncounterDifficultyThreshold, error) {
 	return c.Query().Where(encounterdifficultythreshold.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *EncounterDifficultyThresholdClient) GetX(ctx context.Context, id int) *EncounterDifficultyThreshold {
+func (c *EncounterDifficultyThresholdClient) GetX(ctx context.Context, id uuid.UUID) *EncounterDifficultyThreshold {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryDifficulty queries the difficulty edge of a EncounterDifficultyThreshold.
+func (c *EncounterDifficultyThresholdClient) QueryDifficulty(edt *EncounterDifficultyThreshold) *DifficultyQuery {
+	query := (&DifficultyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := edt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(encounterdifficultythreshold.Table, encounterdifficultythreshold.FieldID, id),
+			sqlgraph.To(difficulty.Table, difficulty.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, encounterdifficultythreshold.DifficultyTable, encounterdifficultythreshold.DifficultyColumn),
+		)
+		fromV = sqlgraph.Neighbors(edt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

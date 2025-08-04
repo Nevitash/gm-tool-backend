@@ -94,7 +94,8 @@ var (
 	}
 	// DifficultiesColumns holds the columns for the "difficulties" table.
 	DifficultiesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "name", Type: field.TypeString, Unique: true, Size: 30},
 	}
 	// DifficultiesTable holds the schema information for the "difficulties" table.
 	DifficultiesTable = &schema.Table{
@@ -154,13 +155,24 @@ var (
 	}
 	// EncounterDifficultyThresholdsColumns holds the columns for the "encounter_difficulty_thresholds" table.
 	EncounterDifficultyThresholdsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "player_level", Type: field.TypeInt},
+		{Name: "exp", Type: field.TypeInt64},
+		{Name: "difficulty_thresholds", Type: field.TypeUUID, Nullable: true},
 	}
 	// EncounterDifficultyThresholdsTable holds the schema information for the "encounter_difficulty_thresholds" table.
 	EncounterDifficultyThresholdsTable = &schema.Table{
 		Name:       "encounter_difficulty_thresholds",
 		Columns:    EncounterDifficultyThresholdsColumns,
 		PrimaryKey: []*schema.Column{EncounterDifficultyThresholdsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "encounter_difficulty_thresholds_difficulties_thresholds",
+				Columns:    []*schema.Column{EncounterDifficultyThresholdsColumns[3]},
+				RefColumns: []*schema.Column{DifficultiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -195,4 +207,5 @@ func init() {
 	EncountersTable.ForeignKeys[0].RefTable = UsersTable
 	EncounterCombatantsTable.ForeignKeys[0].RefTable = CombatantsTable
 	EncounterCombatantsTable.ForeignKeys[1].RefTable = EncountersTable
+	EncounterDifficultyThresholdsTable.ForeignKeys[0].RefTable = DifficultiesTable
 }

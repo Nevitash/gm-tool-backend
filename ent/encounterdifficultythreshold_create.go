@@ -4,11 +4,14 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounterdifficultythreshold"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // EncounterDifficultyThresholdCreate is the builder for creating a EncounterDifficultyThreshold entity.
@@ -18,6 +21,51 @@ type EncounterDifficultyThresholdCreate struct {
 	hooks    []Hook
 }
 
+// SetPlayerLevel sets the "player_level" field.
+func (edtc *EncounterDifficultyThresholdCreate) SetPlayerLevel(i int) *EncounterDifficultyThresholdCreate {
+	edtc.mutation.SetPlayerLevel(i)
+	return edtc
+}
+
+// SetExp sets the "exp" field.
+func (edtc *EncounterDifficultyThresholdCreate) SetExp(i int64) *EncounterDifficultyThresholdCreate {
+	edtc.mutation.SetExp(i)
+	return edtc
+}
+
+// SetID sets the "id" field.
+func (edtc *EncounterDifficultyThresholdCreate) SetID(u uuid.UUID) *EncounterDifficultyThresholdCreate {
+	edtc.mutation.SetID(u)
+	return edtc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (edtc *EncounterDifficultyThresholdCreate) SetNillableID(u *uuid.UUID) *EncounterDifficultyThresholdCreate {
+	if u != nil {
+		edtc.SetID(*u)
+	}
+	return edtc
+}
+
+// SetDifficultyID sets the "difficulty" edge to the Difficulty entity by ID.
+func (edtc *EncounterDifficultyThresholdCreate) SetDifficultyID(id uuid.UUID) *EncounterDifficultyThresholdCreate {
+	edtc.mutation.SetDifficultyID(id)
+	return edtc
+}
+
+// SetNillableDifficultyID sets the "difficulty" edge to the Difficulty entity by ID if the given value is not nil.
+func (edtc *EncounterDifficultyThresholdCreate) SetNillableDifficultyID(id *uuid.UUID) *EncounterDifficultyThresholdCreate {
+	if id != nil {
+		edtc = edtc.SetDifficultyID(*id)
+	}
+	return edtc
+}
+
+// SetDifficulty sets the "difficulty" edge to the Difficulty entity.
+func (edtc *EncounterDifficultyThresholdCreate) SetDifficulty(d *Difficulty) *EncounterDifficultyThresholdCreate {
+	return edtc.SetDifficultyID(d.ID)
+}
+
 // Mutation returns the EncounterDifficultyThresholdMutation object of the builder.
 func (edtc *EncounterDifficultyThresholdCreate) Mutation() *EncounterDifficultyThresholdMutation {
 	return edtc.mutation
@@ -25,6 +73,7 @@ func (edtc *EncounterDifficultyThresholdCreate) Mutation() *EncounterDifficultyT
 
 // Save creates the EncounterDifficultyThreshold in the database.
 func (edtc *EncounterDifficultyThresholdCreate) Save(ctx context.Context) (*EncounterDifficultyThreshold, error) {
+	edtc.defaults()
 	return withHooks(ctx, edtc.sqlSave, edtc.mutation, edtc.hooks)
 }
 
@@ -50,8 +99,32 @@ func (edtc *EncounterDifficultyThresholdCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (edtc *EncounterDifficultyThresholdCreate) defaults() {
+	if _, ok := edtc.mutation.ID(); !ok {
+		v := encounterdifficultythreshold.DefaultID()
+		edtc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (edtc *EncounterDifficultyThresholdCreate) check() error {
+	if _, ok := edtc.mutation.PlayerLevel(); !ok {
+		return &ValidationError{Name: "player_level", err: errors.New(`ent: missing required field "EncounterDifficultyThreshold.player_level"`)}
+	}
+	if v, ok := edtc.mutation.PlayerLevel(); ok {
+		if err := encounterdifficultythreshold.PlayerLevelValidator(v); err != nil {
+			return &ValidationError{Name: "player_level", err: fmt.Errorf(`ent: validator failed for field "EncounterDifficultyThreshold.player_level": %w`, err)}
+		}
+	}
+	if _, ok := edtc.mutation.Exp(); !ok {
+		return &ValidationError{Name: "exp", err: errors.New(`ent: missing required field "EncounterDifficultyThreshold.exp"`)}
+	}
+	if v, ok := edtc.mutation.Exp(); ok {
+		if err := encounterdifficultythreshold.ExpValidator(v); err != nil {
+			return &ValidationError{Name: "exp", err: fmt.Errorf(`ent: validator failed for field "EncounterDifficultyThreshold.exp": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -66,8 +139,13 @@ func (edtc *EncounterDifficultyThresholdCreate) sqlSave(ctx context.Context) (*E
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	edtc.mutation.id = &_node.ID
 	edtc.mutation.done = true
 	return _node, nil
@@ -76,8 +154,37 @@ func (edtc *EncounterDifficultyThresholdCreate) sqlSave(ctx context.Context) (*E
 func (edtc *EncounterDifficultyThresholdCreate) createSpec() (*EncounterDifficultyThreshold, *sqlgraph.CreateSpec) {
 	var (
 		_node = &EncounterDifficultyThreshold{config: edtc.config}
-		_spec = sqlgraph.NewCreateSpec(encounterdifficultythreshold.Table, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(encounterdifficultythreshold.Table, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID))
 	)
+	if id, ok := edtc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := edtc.mutation.PlayerLevel(); ok {
+		_spec.SetField(encounterdifficultythreshold.FieldPlayerLevel, field.TypeInt, value)
+		_node.PlayerLevel = value
+	}
+	if value, ok := edtc.mutation.Exp(); ok {
+		_spec.SetField(encounterdifficultythreshold.FieldExp, field.TypeInt64, value)
+		_node.Exp = value
+	}
+	if nodes := edtc.mutation.DifficultyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounterdifficultythreshold.DifficultyTable,
+			Columns: []string{encounterdifficultythreshold.DifficultyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(difficulty.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.difficulty_thresholds = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -99,6 +206,7 @@ func (edtcb *EncounterDifficultyThresholdCreateBulk) Save(ctx context.Context) (
 	for i := range edtcb.builders {
 		func(i int, root context.Context) {
 			builder := edtcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*EncounterDifficultyThresholdMutation)
 				if !ok {
@@ -125,10 +233,6 @@ func (edtcb *EncounterDifficultyThresholdCreateBulk) Save(ctx context.Context) (
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})
