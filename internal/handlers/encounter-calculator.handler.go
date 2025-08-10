@@ -212,12 +212,8 @@ func adjustCR(baseCR string, adjustment int) string {
 }
 
 func get2024XpThreshold(level int, difficulty config.Difficulty) (int, error) {
-	levelThresholds, ok := config.DifficultiyExpThresholds[level]
-	if !ok {
-		return 0, fmt.Errorf("XP thresholds not defined for party level %d", level)
-	}
-	threshold, ok := levelThresholds[difficulty]
-	if !ok {
+	threshold, err := data.GetXpThresholdForEncounter(level, string(difficulty))
+	if err != nil {
 		return 0, fmt.Errorf("XP threshold not defined for difficulty %s at level %d", getDifficultyName(difficulty), level)
 	}
 	return threshold, nil

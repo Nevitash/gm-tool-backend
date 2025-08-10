@@ -48,3 +48,24 @@ func IsNoRecoommendedSpellSlotsForCr(err error) bool {
 	var target *NoRecoommendedSpellSlotsForCr
 	return errors.As(err, &target)
 }
+
+type UnknownDifficultyError struct {
+	Difficulty string
+	Wrap       error
+}
+
+func (e *UnknownDifficultyError) Error() string {
+	return fmt.Sprintf("difficulty %v is unknown. (%v)", e.Difficulty, e.Wrap)
+}
+
+func (e *UnknownDifficultyError) Unwrap() error {
+	return e.Wrap
+}
+
+func IsUnknownDifficultyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var target *NoRecoommendedSpellSlotsForCr
+	return errors.As(err, &target)
+}

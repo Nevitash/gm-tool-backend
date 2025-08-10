@@ -4,6 +4,8 @@ import (
 	"context"
 	"gm-tool-backend/ent"
 	"gm-tool-backend/ent/challangerating"
+	"gm-tool-backend/ent/difficulty"
+	"gm-tool-backend/ent/encounterdifficultythreshold"
 	"gm-tool-backend/internal/database"
 	appErrors "gm-tool-backend/internal/errors"
 	"gm-tool-backend/internal/models"
@@ -79,4 +81,20 @@ func mapCrToSpellSlots(crModel *ent.ChallangeRating) (*models.RecommendedSpellSl
 	}
 	result := models.NewRecommendedSpellSlots(crModel.Cr, recommondations)
 	return &result, nil
+}
+
+func GetXpThresholdForEncounter(level int, difficultyString string) (int, error) {
+	client, err := database.GetClient()
+	if err != nil {
+		return -1, err
+	}
+	thrsholdModel, err := client.EncounterDifficultyThreshold.Query().
+		Where(encounterdifficultythreshold.PlayerLevel(level),
+			encounterdifficultythreshold.HasDifficultyWith(difficulty.Name(difficultyString)),
+		).
+		Only(context.Background())
+	if err != nil {
+		return -1, &appErrors.UnknownDifficultyError{Difficulty: difficultyString, Wrap: err}
+	}
+	return int(thrsholdModel.Exp), nil
 }
