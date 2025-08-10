@@ -7,8 +7,8 @@ import (
 	"sort"
 
 	"gm-tool-backend/internal/config"
+	"gm-tool-backend/internal/data"
 	"gm-tool-backend/internal/requests"
-	"gm-tool-backend/internal/responses"
 
 	"github.com/labstack/echo/v4"
 )
@@ -27,12 +27,11 @@ func GetRecommandedStats(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("invalid request format: %w", err)
 	}
-	stats, ok := config.RecommendedStatsByCr[request.Cr]
-	if !ok {
+	recommendedStats, err := data.GetRecommendedStatsForCr(request.Cr)
+	if err != nil {
 		return fmt.Errorf("no recommended stats for cr '%v'", request.Cr)
 	}
-	response := responses.NewRecommendedStatsResponse(stats.Cr, stats.Ac, stats.Hp, stats.AttackModifier, stats.AvarageDamage, stats.Dc)
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, recommendedStats)
 }
 
 // @Summary Get recommended spell slots for an enemy of the given CR
@@ -49,11 +48,11 @@ func GetRecoommendedSpellSlots(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("invalid request format: %w", err)
 	}
-	response, ok := config.RecommendedSpellSlots[request.Cr]
-	if !ok {
+	recommendedSpellSlots, err := data.GetRecommendedSpellSlotsForCr(request.Cr)
+	if err != nil {
 		return fmt.Errorf("no recommended spell slots for cr '%v'", request.Cr)
 	}
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, recommendedSpellSlots)
 }
 
 // CalculateMonsterCrForEncounter calculates monster CR for an encounter
