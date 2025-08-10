@@ -122,10 +122,11 @@ func CalculateEncounterCRs(partySize int, partyLevel int, difficulty config.Diff
 			}
 			continue
 		}
+		xp, _ := data.GetCrXp(actualCR)
 		result[i] = requests.Monster{
 			CRAdjustment: monster.CRAdjustment,
 			ActualCR:     actualCR,
-			XP:           config.ChallangeRatingExp[actualCR],
+			XP:           xp,
 		}
 	}
 
@@ -133,13 +134,12 @@ func CalculateEncounterCRs(partySize int, partyLevel int, difficulty config.Diff
 }
 
 func findBalancedBaselineCR(targetXP float64, monsters []requests.Monster) string {
-	var crOptions []string
-	for cr := range config.ChallangeRatingExp {
-		crOptions = append(crOptions, cr)
-	}
+	var crOptions, _ = data.GetCrs()
 
 	sort.Slice(crOptions, func(i, j int) bool {
-		return config.ChallangeRatingExp[crOptions[i]] < config.ChallangeRatingExp[crOptions[j]]
+		xp1, _ := data.GetCrXp(crOptions[i])
+		xp2, _ := data.GetCrXp(crOptions[j])
+		return xp1 < xp2
 	})
 
 	bestCR := "0" // Smallest CR by XP
@@ -159,7 +159,8 @@ func findBalancedBaselineCR(targetXP float64, monsters []requests.Monster) strin
 				validEncounter = false
 				break
 			}
-			totalXP += float64(config.ChallangeRatingExp[adjustedCR])
+			currentXp, _ := data.GetCrXp(adjustedCR)
+			totalXP += float64(currentXp)
 		}
 
 		if !validEncounter {
@@ -181,13 +182,11 @@ func adjustCR(baseCR string, adjustment int) string {
 		return baseCR
 	}
 
-	var crList []string
-	for cr := range config.ChallangeRatingExp {
-		crList = append(crList, cr)
-	}
-
+	crList, _ := data.GetCrs()
 	sort.Slice(crList, func(i, j int) bool {
-		return config.ChallangeRatingExp[crList[i]] < config.ChallangeRatingExp[crList[j]]
+		xp1, _ := data.GetCrXp(crList[i])
+		xp2, _ := data.GetCrXp(crList[j])
+		return xp1 < xp2
 	})
 
 	currentIndex := -1

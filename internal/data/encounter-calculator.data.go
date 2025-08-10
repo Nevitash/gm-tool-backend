@@ -11,6 +11,42 @@ import (
 	"gm-tool-backend/internal/models"
 )
 
+var crToXpMap map[string]int
+
+func GetCrs() ([]string, error) {
+	client, err := database.GetClient()
+	if err != nil {
+		return nil, err
+	}
+	crModels, err := client.ChallangeRating.Query().All(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	var crs []string
+	for _, crModel := range crModels {
+		crs = append(crs, crModel.Cr)
+	}
+	return crs, nil
+}
+
+func GetXpForCr(cr string) (int, error) {
+	if crToXpMap != nil {
+		return crToXpMap[cr], nil
+	}
+	client, err := database.GetClient()
+	if err != nil {
+		return -1, err
+	}
+	crModels, err := client.ChallangeRating.Query().All(context.Background())
+	if err != nil {
+		return -1, err
+	}
+	for _, crModel := range crModels {
+		crToXpMap[crModel.Cr] = int(crModel.Exp)
+	}
+	return crToXpMap[cr], nil
+}
+
 func GetRecommendedDataForCr(cr string) (*ent.ChallangeRating, error) {
 	client, err := database.GetClient()
 	if err != nil {
@@ -92,9 +128,21 @@ func GetXpThresholdForEncounter(level int, difficultyString string) (int, error)
 		Where(encounterdifficultythreshold.PlayerLevel(level),
 			encounterdifficultythreshold.HasDifficultyWith(difficulty.Name(difficultyString)),
 		).
-		Only(context.Background())
+		First(context.Background())
 	if err != nil {
 		return -1, &appErrors.UnknownDifficultyError{Difficulty: difficultyString, Wrap: err}
 	}
 	return int(thrsholdModel.Exp), nil
+}
+
+func GetCrXp(cr string) (int, error) {
+	client, err := database.GetClient()
+	if err != nil {
+		return -1, err
+	}
+	crModel, err := client.ChallangeRating.Query().Where(challangerating.Cr(cr)).First(context.Background())
+	if err != nil {
+		return -1, err
+	}
+	return int(crModel.Exp), nil
 }
