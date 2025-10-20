@@ -9,24 +9,11 @@ import (
 func SetupRoutes(echoInstance *echo.Echo) {
 	setupUserRoutes(echoInstance)
 	setupCrCalculatorRoutes(echoInstance)
-	// Encounter routes
-	// echoInstance.GET("/encounters", handlers.GetEncounters(client))
-	// echoInstance.POST("/encounters", handlers.CreateEncounter(client))
-	// echoInstance.GET("/encounters/:id", handlers.GetEncounter(client))
-	// echoInstance.PUT("/encounters/:id", handlers.UpdateEncounter(client))
-	// echoInstance.DELETE("/encounters/:id", handlers.DeleteEncounter(client))
+	setupInititiaveTrackerRoutes(echoInstance)
+}
 
-	// // Combatant routes
-	// echoInstance.GET("/combatants", handlers.GetCombatants(client))
-	// echoInstance.POST("/combatants", handlers.CreateCombatant(client))
-	// echoInstance.GET("/combatants/:id", handlers.GetCombatant(client))
-	// echoInstance.PUT("/combatants/:id", handlers.UpdateCombatant(client))
-	// echoInstance.DELETE("/combatants/:id", handlers.DeleteCombatant(client))
-
-	// // Encounter-Combatant relationship routes
-	// echoInstance.POST("/encounters/:id/combatants", handlers.AddCombatantToEncounter(client))
-	// echoInstance.DELETE("/encounters/:encounter_id/combatants/:combatant_id", handlers.RemoveCombatantFromEncounter(client))
-	// echoInstance.GET("/encounters/:id/combatants", handlers.GetEncounterCombatants(client))
+func setupInititiaveTrackerRoutes(echoInstance *echo.Echo) {
+	echoInstance.POST("/inititative-tracker/:gameId", handlers.InitiativeTrackerPost)
 }
 
 func setupUserRoutes(echoInstance *echo.Echo) {
