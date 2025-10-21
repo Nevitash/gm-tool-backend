@@ -3,6 +3,8 @@ package appErrors
 import (
 	"errors"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type UserAlreadyExistsError struct {
@@ -24,5 +26,26 @@ func IsUserAlreadyExistsError(err error) bool {
 		return false
 	}
 	var target *UserAlreadyExistsError
+	return errors.As(err, &target)
+}
+
+type UserDoesNotExist struct {
+	Id   uuid.UUID
+	Wrap error
+}
+
+func (e *UserDoesNotExist) Error() string {
+	return fmt.Sprintf("User with id '%v' does not exist.\n error: %v", e.Id, e.Wrap)
+}
+
+func (e *UserDoesNotExist) Unwrap() error {
+	return e.Wrap
+}
+
+func IsUserDoesNotExist(err error) bool {
+	if err == nil {
+		return false
+	}
+	var target *UserDoesNotExist
 	return errors.As(err, &target)
 }
