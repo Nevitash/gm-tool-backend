@@ -106,9 +106,10 @@ var (
 	// EncountersColumns holds the columns for the "encounters" table.
 	EncountersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "name", Type: field.TypeString},
-		{Name: "user_id", Type: field.TypeUUID},
-		{Name: "user_encounter", Type: field.TypeUUID, Nullable: true},
+		{Name: "name", Type: field.TypeString, Nullable: true},
+		{Name: "external_id", Type: field.TypeString},
+		{Name: "state", Type: field.TypeJSON, Nullable: true},
+		{Name: "game_id", Type: field.TypeUUID},
 	}
 	// EncountersTable holds the schema information for the "encounters" table.
 	EncountersTable = &schema.Table{
@@ -117,10 +118,17 @@ var (
 		PrimaryKey: []*schema.Column{EncountersColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "encounters_users_encounter",
-				Columns:    []*schema.Column{EncountersColumns[3]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.SetNull,
+				Symbol:     "encounters_games_encounters",
+				Columns:    []*schema.Column{EncountersColumns[4]},
+				RefColumns: []*schema.Column{GamesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "encounter_game_id_external_id",
+				Unique:  true,
+				Columns: []*schema.Column{EncountersColumns[4], EncountersColumns[2]},
 			},
 		},
 	}
@@ -174,18 +182,54 @@ var (
 			},
 		},
 	}
+	// GamesColumns holds the columns for the "games" table.
+	GamesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "owner_id", Type: field.TypeUUID},
+	}
+	// GamesTable holds the schema information for the "games" table.
+	GamesTable = &schema.Table{
+		Name:       "games",
+		Columns:    GamesColumns,
+		PrimaryKey: []*schema.Column{GamesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "games_users_games",
+				Columns:    []*schema.Column{GamesColumns[2]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "game_owner_id_name",
+				Unique:  true,
+				Columns: []*schema.Column{GamesColumns[2], GamesColumns[1]},
+			},
+		},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "email", Type: field.TypeString, Unique: true},
 		{Name: "verified", Type: field.TypeBool, Default: false},
+		{Name: "game_players", Type: field.TypeUUID, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "users_games_players",
+				Columns:    []*schema.Column{UsersColumns[4]},
+				RefColumns: []*schema.Column{GamesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
@@ -197,6 +241,7 @@ var (
 		EncountersTable,
 		EncounterCombatantsTable,
 		EncounterDifficultyThresholdsTable,
+		GamesTable,
 		UsersTable,
 	}
 )
@@ -204,8 +249,10 @@ var (
 func init() {
 	CrSpellSlotsTable.ForeignKeys[0].RefTable = ChallangeRatingsTable
 	CrStatsTable.ForeignKeys[0].RefTable = ChallangeRatingsTable
-	EncountersTable.ForeignKeys[0].RefTable = UsersTable
+	EncountersTable.ForeignKeys[0].RefTable = GamesTable
 	EncounterCombatantsTable.ForeignKeys[0].RefTable = CombatantsTable
 	EncounterCombatantsTable.ForeignKeys[1].RefTable = EncountersTable
 	EncounterDifficultyThresholdsTable.ForeignKeys[0].RefTable = DifficultiesTable
+	GamesTable.ForeignKeys[0].RefTable = UsersTable
+	UsersTable.ForeignKeys[0].RefTable = GamesTable
 }

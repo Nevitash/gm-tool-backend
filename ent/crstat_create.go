@@ -9,6 +9,8 @@ import (
 	"gm-tool-backend/ent/challangerating"
 	"gm-tool-backend/ent/crstat"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -19,6 +21,7 @@ type CrStatCreate struct {
 	config
 	mutation *CrStatMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetAc sets the "ac" field.
@@ -193,6 +196,7 @@ func (csc *CrStatCreate) createSpec() (*CrStat, *sqlgraph.CreateSpec) {
 		_node = &CrStat{config: csc.config}
 		_spec = sqlgraph.NewCreateSpec(crstat.Table, sqlgraph.NewFieldSpec(crstat.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = csc.conflict
 	if id, ok := csc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -237,11 +241,342 @@ func (csc *CrStatCreate) createSpec() (*CrStat, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.CrStat.Create().
+//		SetAc(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CrStatUpsert) {
+//			SetAc(v+v).
+//		}).
+//		Exec(ctx)
+func (csc *CrStatCreate) OnConflict(opts ...sql.ConflictOption) *CrStatUpsertOne {
+	csc.conflict = opts
+	return &CrStatUpsertOne{
+		create: csc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.CrStat.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (csc *CrStatCreate) OnConflictColumns(columns ...string) *CrStatUpsertOne {
+	csc.conflict = append(csc.conflict, sql.ConflictColumns(columns...))
+	return &CrStatUpsertOne{
+		create: csc,
+	}
+}
+
+type (
+	// CrStatUpsertOne is the builder for "upsert"-ing
+	//  one CrStat node.
+	CrStatUpsertOne struct {
+		create *CrStatCreate
+	}
+
+	// CrStatUpsert is the "OnConflict" setter.
+	CrStatUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetAc sets the "ac" field.
+func (u *CrStatUpsert) SetAc(v int) *CrStatUpsert {
+	u.Set(crstat.FieldAc, v)
+	return u
+}
+
+// UpdateAc sets the "ac" field to the value that was provided on create.
+func (u *CrStatUpsert) UpdateAc() *CrStatUpsert {
+	u.SetExcluded(crstat.FieldAc)
+	return u
+}
+
+// AddAc adds v to the "ac" field.
+func (u *CrStatUpsert) AddAc(v int) *CrStatUpsert {
+	u.Add(crstat.FieldAc, v)
+	return u
+}
+
+// SetHp sets the "hp" field.
+func (u *CrStatUpsert) SetHp(v int) *CrStatUpsert {
+	u.Set(crstat.FieldHp, v)
+	return u
+}
+
+// UpdateHp sets the "hp" field to the value that was provided on create.
+func (u *CrStatUpsert) UpdateHp() *CrStatUpsert {
+	u.SetExcluded(crstat.FieldHp)
+	return u
+}
+
+// AddHp adds v to the "hp" field.
+func (u *CrStatUpsert) AddHp(v int) *CrStatUpsert {
+	u.Add(crstat.FieldHp, v)
+	return u
+}
+
+// SetAttackModifier sets the "attackModifier" field.
+func (u *CrStatUpsert) SetAttackModifier(v int) *CrStatUpsert {
+	u.Set(crstat.FieldAttackModifier, v)
+	return u
+}
+
+// UpdateAttackModifier sets the "attackModifier" field to the value that was provided on create.
+func (u *CrStatUpsert) UpdateAttackModifier() *CrStatUpsert {
+	u.SetExcluded(crstat.FieldAttackModifier)
+	return u
+}
+
+// AddAttackModifier adds v to the "attackModifier" field.
+func (u *CrStatUpsert) AddAttackModifier(v int) *CrStatUpsert {
+	u.Add(crstat.FieldAttackModifier, v)
+	return u
+}
+
+// SetAvarageDamage sets the "avarageDamage" field.
+func (u *CrStatUpsert) SetAvarageDamage(v int) *CrStatUpsert {
+	u.Set(crstat.FieldAvarageDamage, v)
+	return u
+}
+
+// UpdateAvarageDamage sets the "avarageDamage" field to the value that was provided on create.
+func (u *CrStatUpsert) UpdateAvarageDamage() *CrStatUpsert {
+	u.SetExcluded(crstat.FieldAvarageDamage)
+	return u
+}
+
+// AddAvarageDamage adds v to the "avarageDamage" field.
+func (u *CrStatUpsert) AddAvarageDamage(v int) *CrStatUpsert {
+	u.Add(crstat.FieldAvarageDamage, v)
+	return u
+}
+
+// SetDc sets the "dc" field.
+func (u *CrStatUpsert) SetDc(v int) *CrStatUpsert {
+	u.Set(crstat.FieldDc, v)
+	return u
+}
+
+// UpdateDc sets the "dc" field to the value that was provided on create.
+func (u *CrStatUpsert) UpdateDc() *CrStatUpsert {
+	u.SetExcluded(crstat.FieldDc)
+	return u
+}
+
+// AddDc adds v to the "dc" field.
+func (u *CrStatUpsert) AddDc(v int) *CrStatUpsert {
+	u.Add(crstat.FieldDc, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.CrStat.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(crstat.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CrStatUpsertOne) UpdateNewValues() *CrStatUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(crstat.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.CrStat.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *CrStatUpsertOne) Ignore() *CrStatUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CrStatUpsertOne) DoNothing() *CrStatUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CrStatCreate.OnConflict
+// documentation for more info.
+func (u *CrStatUpsertOne) Update(set func(*CrStatUpsert)) *CrStatUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CrStatUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAc sets the "ac" field.
+func (u *CrStatUpsertOne) SetAc(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetAc(v)
+	})
+}
+
+// AddAc adds v to the "ac" field.
+func (u *CrStatUpsertOne) AddAc(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddAc(v)
+	})
+}
+
+// UpdateAc sets the "ac" field to the value that was provided on create.
+func (u *CrStatUpsertOne) UpdateAc() *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateAc()
+	})
+}
+
+// SetHp sets the "hp" field.
+func (u *CrStatUpsertOne) SetHp(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetHp(v)
+	})
+}
+
+// AddHp adds v to the "hp" field.
+func (u *CrStatUpsertOne) AddHp(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddHp(v)
+	})
+}
+
+// UpdateHp sets the "hp" field to the value that was provided on create.
+func (u *CrStatUpsertOne) UpdateHp() *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateHp()
+	})
+}
+
+// SetAttackModifier sets the "attackModifier" field.
+func (u *CrStatUpsertOne) SetAttackModifier(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetAttackModifier(v)
+	})
+}
+
+// AddAttackModifier adds v to the "attackModifier" field.
+func (u *CrStatUpsertOne) AddAttackModifier(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddAttackModifier(v)
+	})
+}
+
+// UpdateAttackModifier sets the "attackModifier" field to the value that was provided on create.
+func (u *CrStatUpsertOne) UpdateAttackModifier() *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateAttackModifier()
+	})
+}
+
+// SetAvarageDamage sets the "avarageDamage" field.
+func (u *CrStatUpsertOne) SetAvarageDamage(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetAvarageDamage(v)
+	})
+}
+
+// AddAvarageDamage adds v to the "avarageDamage" field.
+func (u *CrStatUpsertOne) AddAvarageDamage(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddAvarageDamage(v)
+	})
+}
+
+// UpdateAvarageDamage sets the "avarageDamage" field to the value that was provided on create.
+func (u *CrStatUpsertOne) UpdateAvarageDamage() *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateAvarageDamage()
+	})
+}
+
+// SetDc sets the "dc" field.
+func (u *CrStatUpsertOne) SetDc(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetDc(v)
+	})
+}
+
+// AddDc adds v to the "dc" field.
+func (u *CrStatUpsertOne) AddDc(v int) *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddDc(v)
+	})
+}
+
+// UpdateDc sets the "dc" field to the value that was provided on create.
+func (u *CrStatUpsertOne) UpdateDc() *CrStatUpsertOne {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateDc()
+	})
+}
+
+// Exec executes the query.
+func (u *CrStatUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CrStatCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CrStatUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *CrStatUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: CrStatUpsertOne.ID is not supported by MySQL driver. Use CrStatUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *CrStatUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // CrStatCreateBulk is the builder for creating many CrStat entities in bulk.
 type CrStatCreateBulk struct {
 	config
 	err      error
 	builders []*CrStatCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the CrStat entities in the database.
@@ -271,6 +606,7 @@ func (cscb *CrStatCreateBulk) Save(ctx context.Context) ([]*CrStat, error) {
 					_, err = mutators[i+1].Mutate(root, cscb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = cscb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, cscb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -317,6 +653,225 @@ func (cscb *CrStatCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (cscb *CrStatCreateBulk) ExecX(ctx context.Context) {
 	if err := cscb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.CrStat.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CrStatUpsert) {
+//			SetAc(v+v).
+//		}).
+//		Exec(ctx)
+func (cscb *CrStatCreateBulk) OnConflict(opts ...sql.ConflictOption) *CrStatUpsertBulk {
+	cscb.conflict = opts
+	return &CrStatUpsertBulk{
+		create: cscb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.CrStat.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (cscb *CrStatCreateBulk) OnConflictColumns(columns ...string) *CrStatUpsertBulk {
+	cscb.conflict = append(cscb.conflict, sql.ConflictColumns(columns...))
+	return &CrStatUpsertBulk{
+		create: cscb,
+	}
+}
+
+// CrStatUpsertBulk is the builder for "upsert"-ing
+// a bulk of CrStat nodes.
+type CrStatUpsertBulk struct {
+	create *CrStatCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.CrStat.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(crstat.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CrStatUpsertBulk) UpdateNewValues() *CrStatUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(crstat.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.CrStat.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *CrStatUpsertBulk) Ignore() *CrStatUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CrStatUpsertBulk) DoNothing() *CrStatUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CrStatCreateBulk.OnConflict
+// documentation for more info.
+func (u *CrStatUpsertBulk) Update(set func(*CrStatUpsert)) *CrStatUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CrStatUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAc sets the "ac" field.
+func (u *CrStatUpsertBulk) SetAc(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetAc(v)
+	})
+}
+
+// AddAc adds v to the "ac" field.
+func (u *CrStatUpsertBulk) AddAc(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddAc(v)
+	})
+}
+
+// UpdateAc sets the "ac" field to the value that was provided on create.
+func (u *CrStatUpsertBulk) UpdateAc() *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateAc()
+	})
+}
+
+// SetHp sets the "hp" field.
+func (u *CrStatUpsertBulk) SetHp(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetHp(v)
+	})
+}
+
+// AddHp adds v to the "hp" field.
+func (u *CrStatUpsertBulk) AddHp(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddHp(v)
+	})
+}
+
+// UpdateHp sets the "hp" field to the value that was provided on create.
+func (u *CrStatUpsertBulk) UpdateHp() *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateHp()
+	})
+}
+
+// SetAttackModifier sets the "attackModifier" field.
+func (u *CrStatUpsertBulk) SetAttackModifier(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetAttackModifier(v)
+	})
+}
+
+// AddAttackModifier adds v to the "attackModifier" field.
+func (u *CrStatUpsertBulk) AddAttackModifier(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddAttackModifier(v)
+	})
+}
+
+// UpdateAttackModifier sets the "attackModifier" field to the value that was provided on create.
+func (u *CrStatUpsertBulk) UpdateAttackModifier() *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateAttackModifier()
+	})
+}
+
+// SetAvarageDamage sets the "avarageDamage" field.
+func (u *CrStatUpsertBulk) SetAvarageDamage(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetAvarageDamage(v)
+	})
+}
+
+// AddAvarageDamage adds v to the "avarageDamage" field.
+func (u *CrStatUpsertBulk) AddAvarageDamage(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddAvarageDamage(v)
+	})
+}
+
+// UpdateAvarageDamage sets the "avarageDamage" field to the value that was provided on create.
+func (u *CrStatUpsertBulk) UpdateAvarageDamage() *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateAvarageDamage()
+	})
+}
+
+// SetDc sets the "dc" field.
+func (u *CrStatUpsertBulk) SetDc(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.SetDc(v)
+	})
+}
+
+// AddDc adds v to the "dc" field.
+func (u *CrStatUpsertBulk) AddDc(v int) *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.AddDc(v)
+	})
+}
+
+// UpdateDc sets the "dc" field to the value that was provided on create.
+func (u *CrStatUpsertBulk) UpdateDc() *CrStatUpsertBulk {
+	return u.Update(func(s *CrStatUpsert) {
+		s.UpdateDc()
+	})
+}
+
+// Exec executes the query.
+func (u *CrStatUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the CrStatCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CrStatCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CrStatUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

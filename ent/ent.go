@@ -14,6 +14,7 @@ import (
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
 	"gm-tool-backend/ent/encounterdifficultythreshold"
+	"gm-tool-backend/ent/game"
 	"gm-tool-backend/ent/user"
 	"reflect"
 	"sync"
@@ -89,6 +90,7 @@ func checkColumn(table, column string) error {
 			encounter.Table:                    encounter.ValidColumn,
 			encountercombatant.Table:           encountercombatant.ValidColumn,
 			encounterdifficultythreshold.Table: encounterdifficultythreshold.ValidColumn,
+			game.Table:                         game.ValidColumn,
 			user.Table:                         user.ValidColumn,
 		})
 	})

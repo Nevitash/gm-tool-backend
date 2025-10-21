@@ -210,21 +210,21 @@ func VerifiedNEQ(v bool) predicate.User {
 	return predicate.User(sql.FieldNEQ(FieldVerified, v))
 }
 
-// HasEncounter applies the HasEdge predicate on the "encounter" edge.
-func HasEncounter() predicate.User {
+// HasGames applies the HasEdge predicate on the "games" edge.
+func HasGames() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, EncounterTable, EncounterColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, GamesTable, GamesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasEncounterWith applies the HasEdge predicate on the "encounter" edge with a given conditions (other predicates).
-func HasEncounterWith(preds ...predicate.Encounter) predicate.User {
+// HasGamesWith applies the HasEdge predicate on the "games" edge with a given conditions (other predicates).
+func HasGamesWith(preds ...predicate.Game) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
-		step := newEncounterStep()
+		step := newGamesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

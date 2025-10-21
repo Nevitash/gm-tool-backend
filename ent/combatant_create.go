@@ -9,6 +9,8 @@ import (
 	"gm-tool-backend/ent/combatant"
 	"gm-tool-backend/ent/encountercombatant"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -19,6 +21,7 @@ type CombatantCreate struct {
 	config
 	mutation *CombatantMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetName sets the "name" field.
@@ -243,6 +246,7 @@ func (cc *CombatantCreate) createSpec() (*Combatant, *sqlgraph.CreateSpec) {
 		_node = &Combatant{config: cc.config}
 		_spec = sqlgraph.NewCreateSpec(combatant.Table, sqlgraph.NewFieldSpec(combatant.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = cc.conflict
 	if id, ok := cc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -306,11 +310,485 @@ func (cc *CombatantCreate) createSpec() (*Combatant, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Combatant.Create().
+//		SetName(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CombatantUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (cc *CombatantCreate) OnConflict(opts ...sql.ConflictOption) *CombatantUpsertOne {
+	cc.conflict = opts
+	return &CombatantUpsertOne{
+		create: cc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Combatant.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (cc *CombatantCreate) OnConflictColumns(columns ...string) *CombatantUpsertOne {
+	cc.conflict = append(cc.conflict, sql.ConflictColumns(columns...))
+	return &CombatantUpsertOne{
+		create: cc,
+	}
+}
+
+type (
+	// CombatantUpsertOne is the builder for "upsert"-ing
+	//  one Combatant node.
+	CombatantUpsertOne struct {
+		create *CombatantCreate
+	}
+
+	// CombatantUpsert is the "OnConflict" setter.
+	CombatantUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetName sets the "name" field.
+func (u *CombatantUpsert) SetName(v string) *CombatantUpsert {
+	u.Set(combatant.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateName() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldName)
+	return u
+}
+
+// SetCr sets the "cr" field.
+func (u *CombatantUpsert) SetCr(v float64) *CombatantUpsert {
+	u.Set(combatant.FieldCr, v)
+	return u
+}
+
+// UpdateCr sets the "cr" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateCr() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldCr)
+	return u
+}
+
+// AddCr adds v to the "cr" field.
+func (u *CombatantUpsert) AddCr(v float64) *CombatantUpsert {
+	u.Add(combatant.FieldCr, v)
+	return u
+}
+
+// SetAc sets the "ac" field.
+func (u *CombatantUpsert) SetAc(v int) *CombatantUpsert {
+	u.Set(combatant.FieldAc, v)
+	return u
+}
+
+// UpdateAc sets the "ac" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateAc() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldAc)
+	return u
+}
+
+// AddAc adds v to the "ac" field.
+func (u *CombatantUpsert) AddAc(v int) *CombatantUpsert {
+	u.Add(combatant.FieldAc, v)
+	return u
+}
+
+// SetHp sets the "hp" field.
+func (u *CombatantUpsert) SetHp(v int) *CombatantUpsert {
+	u.Set(combatant.FieldHp, v)
+	return u
+}
+
+// UpdateHp sets the "hp" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateHp() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldHp)
+	return u
+}
+
+// AddHp adds v to the "hp" field.
+func (u *CombatantUpsert) AddHp(v int) *CombatantUpsert {
+	u.Add(combatant.FieldHp, v)
+	return u
+}
+
+// SetHitDice sets the "hit_dice" field.
+func (u *CombatantUpsert) SetHitDice(v string) *CombatantUpsert {
+	u.Set(combatant.FieldHitDice, v)
+	return u
+}
+
+// UpdateHitDice sets the "hit_dice" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateHitDice() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldHitDice)
+	return u
+}
+
+// SetSpeedMod sets the "speed_mod" field.
+func (u *CombatantUpsert) SetSpeedMod(v int) *CombatantUpsert {
+	u.Set(combatant.FieldSpeedMod, v)
+	return u
+}
+
+// UpdateSpeedMod sets the "speed_mod" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateSpeedMod() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldSpeedMod)
+	return u
+}
+
+// AddSpeedMod adds v to the "speed_mod" field.
+func (u *CombatantUpsert) AddSpeedMod(v int) *CombatantUpsert {
+	u.Add(combatant.FieldSpeedMod, v)
+	return u
+}
+
+// SetDc sets the "dc" field.
+func (u *CombatantUpsert) SetDc(v int) *CombatantUpsert {
+	u.Set(combatant.FieldDc, v)
+	return u
+}
+
+// UpdateDc sets the "dc" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateDc() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldDc)
+	return u
+}
+
+// AddDc adds v to the "dc" field.
+func (u *CombatantUpsert) AddDc(v int) *CombatantUpsert {
+	u.Add(combatant.FieldDc, v)
+	return u
+}
+
+// SetDamage sets the "damage" field.
+func (u *CombatantUpsert) SetDamage(v float64) *CombatantUpsert {
+	u.Set(combatant.FieldDamage, v)
+	return u
+}
+
+// UpdateDamage sets the "damage" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateDamage() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldDamage)
+	return u
+}
+
+// AddDamage adds v to the "damage" field.
+func (u *CombatantUpsert) AddDamage(v float64) *CombatantUpsert {
+	u.Add(combatant.FieldDamage, v)
+	return u
+}
+
+// SetIsBoss sets the "is_boss" field.
+func (u *CombatantUpsert) SetIsBoss(v bool) *CombatantUpsert {
+	u.Set(combatant.FieldIsBoss, v)
+	return u
+}
+
+// UpdateIsBoss sets the "is_boss" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateIsBoss() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldIsBoss)
+	return u
+}
+
+// SetIsLegendary sets the "is_legendary" field.
+func (u *CombatantUpsert) SetIsLegendary(v bool) *CombatantUpsert {
+	u.Set(combatant.FieldIsLegendary, v)
+	return u
+}
+
+// UpdateIsLegendary sets the "is_legendary" field to the value that was provided on create.
+func (u *CombatantUpsert) UpdateIsLegendary() *CombatantUpsert {
+	u.SetExcluded(combatant.FieldIsLegendary)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Combatant.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(combatant.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CombatantUpsertOne) UpdateNewValues() *CombatantUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(combatant.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Combatant.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *CombatantUpsertOne) Ignore() *CombatantUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CombatantUpsertOne) DoNothing() *CombatantUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CombatantCreate.OnConflict
+// documentation for more info.
+func (u *CombatantUpsertOne) Update(set func(*CombatantUpsert)) *CombatantUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CombatantUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *CombatantUpsertOne) SetName(v string) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateName() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetCr sets the "cr" field.
+func (u *CombatantUpsertOne) SetCr(v float64) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetCr(v)
+	})
+}
+
+// AddCr adds v to the "cr" field.
+func (u *CombatantUpsertOne) AddCr(v float64) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddCr(v)
+	})
+}
+
+// UpdateCr sets the "cr" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateCr() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateCr()
+	})
+}
+
+// SetAc sets the "ac" field.
+func (u *CombatantUpsertOne) SetAc(v int) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetAc(v)
+	})
+}
+
+// AddAc adds v to the "ac" field.
+func (u *CombatantUpsertOne) AddAc(v int) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddAc(v)
+	})
+}
+
+// UpdateAc sets the "ac" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateAc() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateAc()
+	})
+}
+
+// SetHp sets the "hp" field.
+func (u *CombatantUpsertOne) SetHp(v int) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetHp(v)
+	})
+}
+
+// AddHp adds v to the "hp" field.
+func (u *CombatantUpsertOne) AddHp(v int) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddHp(v)
+	})
+}
+
+// UpdateHp sets the "hp" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateHp() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateHp()
+	})
+}
+
+// SetHitDice sets the "hit_dice" field.
+func (u *CombatantUpsertOne) SetHitDice(v string) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetHitDice(v)
+	})
+}
+
+// UpdateHitDice sets the "hit_dice" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateHitDice() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateHitDice()
+	})
+}
+
+// SetSpeedMod sets the "speed_mod" field.
+func (u *CombatantUpsertOne) SetSpeedMod(v int) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetSpeedMod(v)
+	})
+}
+
+// AddSpeedMod adds v to the "speed_mod" field.
+func (u *CombatantUpsertOne) AddSpeedMod(v int) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddSpeedMod(v)
+	})
+}
+
+// UpdateSpeedMod sets the "speed_mod" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateSpeedMod() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateSpeedMod()
+	})
+}
+
+// SetDc sets the "dc" field.
+func (u *CombatantUpsertOne) SetDc(v int) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetDc(v)
+	})
+}
+
+// AddDc adds v to the "dc" field.
+func (u *CombatantUpsertOne) AddDc(v int) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddDc(v)
+	})
+}
+
+// UpdateDc sets the "dc" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateDc() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateDc()
+	})
+}
+
+// SetDamage sets the "damage" field.
+func (u *CombatantUpsertOne) SetDamage(v float64) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetDamage(v)
+	})
+}
+
+// AddDamage adds v to the "damage" field.
+func (u *CombatantUpsertOne) AddDamage(v float64) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddDamage(v)
+	})
+}
+
+// UpdateDamage sets the "damage" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateDamage() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateDamage()
+	})
+}
+
+// SetIsBoss sets the "is_boss" field.
+func (u *CombatantUpsertOne) SetIsBoss(v bool) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetIsBoss(v)
+	})
+}
+
+// UpdateIsBoss sets the "is_boss" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateIsBoss() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateIsBoss()
+	})
+}
+
+// SetIsLegendary sets the "is_legendary" field.
+func (u *CombatantUpsertOne) SetIsLegendary(v bool) *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetIsLegendary(v)
+	})
+}
+
+// UpdateIsLegendary sets the "is_legendary" field to the value that was provided on create.
+func (u *CombatantUpsertOne) UpdateIsLegendary() *CombatantUpsertOne {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateIsLegendary()
+	})
+}
+
+// Exec executes the query.
+func (u *CombatantUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CombatantCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CombatantUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *CombatantUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: CombatantUpsertOne.ID is not supported by MySQL driver. Use CombatantUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *CombatantUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // CombatantCreateBulk is the builder for creating many Combatant entities in bulk.
 type CombatantCreateBulk struct {
 	config
 	err      error
 	builders []*CombatantCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Combatant entities in the database.
@@ -340,6 +818,7 @@ func (ccb *CombatantCreateBulk) Save(ctx context.Context) ([]*Combatant, error) 
 					_, err = mutators[i+1].Mutate(root, ccb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = ccb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, ccb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -386,6 +865,302 @@ func (ccb *CombatantCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (ccb *CombatantCreateBulk) ExecX(ctx context.Context) {
 	if err := ccb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Combatant.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CombatantUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (ccb *CombatantCreateBulk) OnConflict(opts ...sql.ConflictOption) *CombatantUpsertBulk {
+	ccb.conflict = opts
+	return &CombatantUpsertBulk{
+		create: ccb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Combatant.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (ccb *CombatantCreateBulk) OnConflictColumns(columns ...string) *CombatantUpsertBulk {
+	ccb.conflict = append(ccb.conflict, sql.ConflictColumns(columns...))
+	return &CombatantUpsertBulk{
+		create: ccb,
+	}
+}
+
+// CombatantUpsertBulk is the builder for "upsert"-ing
+// a bulk of Combatant nodes.
+type CombatantUpsertBulk struct {
+	create *CombatantCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Combatant.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(combatant.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CombatantUpsertBulk) UpdateNewValues() *CombatantUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(combatant.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Combatant.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *CombatantUpsertBulk) Ignore() *CombatantUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CombatantUpsertBulk) DoNothing() *CombatantUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CombatantCreateBulk.OnConflict
+// documentation for more info.
+func (u *CombatantUpsertBulk) Update(set func(*CombatantUpsert)) *CombatantUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CombatantUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *CombatantUpsertBulk) SetName(v string) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateName() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetCr sets the "cr" field.
+func (u *CombatantUpsertBulk) SetCr(v float64) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetCr(v)
+	})
+}
+
+// AddCr adds v to the "cr" field.
+func (u *CombatantUpsertBulk) AddCr(v float64) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddCr(v)
+	})
+}
+
+// UpdateCr sets the "cr" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateCr() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateCr()
+	})
+}
+
+// SetAc sets the "ac" field.
+func (u *CombatantUpsertBulk) SetAc(v int) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetAc(v)
+	})
+}
+
+// AddAc adds v to the "ac" field.
+func (u *CombatantUpsertBulk) AddAc(v int) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddAc(v)
+	})
+}
+
+// UpdateAc sets the "ac" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateAc() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateAc()
+	})
+}
+
+// SetHp sets the "hp" field.
+func (u *CombatantUpsertBulk) SetHp(v int) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetHp(v)
+	})
+}
+
+// AddHp adds v to the "hp" field.
+func (u *CombatantUpsertBulk) AddHp(v int) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddHp(v)
+	})
+}
+
+// UpdateHp sets the "hp" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateHp() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateHp()
+	})
+}
+
+// SetHitDice sets the "hit_dice" field.
+func (u *CombatantUpsertBulk) SetHitDice(v string) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetHitDice(v)
+	})
+}
+
+// UpdateHitDice sets the "hit_dice" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateHitDice() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateHitDice()
+	})
+}
+
+// SetSpeedMod sets the "speed_mod" field.
+func (u *CombatantUpsertBulk) SetSpeedMod(v int) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetSpeedMod(v)
+	})
+}
+
+// AddSpeedMod adds v to the "speed_mod" field.
+func (u *CombatantUpsertBulk) AddSpeedMod(v int) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddSpeedMod(v)
+	})
+}
+
+// UpdateSpeedMod sets the "speed_mod" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateSpeedMod() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateSpeedMod()
+	})
+}
+
+// SetDc sets the "dc" field.
+func (u *CombatantUpsertBulk) SetDc(v int) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetDc(v)
+	})
+}
+
+// AddDc adds v to the "dc" field.
+func (u *CombatantUpsertBulk) AddDc(v int) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddDc(v)
+	})
+}
+
+// UpdateDc sets the "dc" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateDc() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateDc()
+	})
+}
+
+// SetDamage sets the "damage" field.
+func (u *CombatantUpsertBulk) SetDamage(v float64) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetDamage(v)
+	})
+}
+
+// AddDamage adds v to the "damage" field.
+func (u *CombatantUpsertBulk) AddDamage(v float64) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.AddDamage(v)
+	})
+}
+
+// UpdateDamage sets the "damage" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateDamage() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateDamage()
+	})
+}
+
+// SetIsBoss sets the "is_boss" field.
+func (u *CombatantUpsertBulk) SetIsBoss(v bool) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetIsBoss(v)
+	})
+}
+
+// UpdateIsBoss sets the "is_boss" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateIsBoss() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateIsBoss()
+	})
+}
+
+// SetIsLegendary sets the "is_legendary" field.
+func (u *CombatantUpsertBulk) SetIsLegendary(v bool) *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.SetIsLegendary(v)
+	})
+}
+
+// UpdateIsLegendary sets the "is_legendary" field to the value that was provided on create.
+func (u *CombatantUpsertBulk) UpdateIsLegendary() *CombatantUpsertBulk {
+	return u.Update(func(s *CombatantUpsert) {
+		s.UpdateIsLegendary()
+	})
+}
+
+// Exec executes the query.
+func (u *CombatantUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the CombatantCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CombatantCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CombatantUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

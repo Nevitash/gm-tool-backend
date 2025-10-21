@@ -60,9 +60,14 @@ func Name(v string) predicate.Encounter {
 	return predicate.Encounter(sql.FieldEQ(FieldName, v))
 }
 
-// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
-func UserID(v uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldEQ(FieldUserID, v))
+// GameID applies equality check predicate on the "game_id" field. It's identical to GameIDEQ.
+func GameID(v uuid.UUID) predicate.Encounter {
+	return predicate.Encounter(sql.FieldEQ(FieldGameID, v))
+}
+
+// ExternalID applies equality check predicate on the "external_id" field. It's identical to ExternalIDEQ.
+func ExternalID(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldEQ(FieldExternalID, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -120,6 +125,16 @@ func NameHasSuffix(v string) predicate.Encounter {
 	return predicate.Encounter(sql.FieldHasSuffix(FieldName, v))
 }
 
+// NameIsNil applies the IsNil predicate on the "name" field.
+func NameIsNil() predicate.Encounter {
+	return predicate.Encounter(sql.FieldIsNull(FieldName))
+}
+
+// NameNotNil applies the NotNil predicate on the "name" field.
+func NameNotNil() predicate.Encounter {
+	return predicate.Encounter(sql.FieldNotNull(FieldName))
+}
+
 // NameEqualFold applies the EqualFold predicate on the "name" field.
 func NameEqualFold(v string) predicate.Encounter {
 	return predicate.Encounter(sql.FieldEqualFold(FieldName, v))
@@ -130,44 +145,122 @@ func NameContainsFold(v string) predicate.Encounter {
 	return predicate.Encounter(sql.FieldContainsFold(FieldName, v))
 }
 
-// UserIDEQ applies the EQ predicate on the "user_id" field.
-func UserIDEQ(v uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldEQ(FieldUserID, v))
+// GameIDEQ applies the EQ predicate on the "game_id" field.
+func GameIDEQ(v uuid.UUID) predicate.Encounter {
+	return predicate.Encounter(sql.FieldEQ(FieldGameID, v))
 }
 
-// UserIDNEQ applies the NEQ predicate on the "user_id" field.
-func UserIDNEQ(v uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldNEQ(FieldUserID, v))
+// GameIDNEQ applies the NEQ predicate on the "game_id" field.
+func GameIDNEQ(v uuid.UUID) predicate.Encounter {
+	return predicate.Encounter(sql.FieldNEQ(FieldGameID, v))
 }
 
-// UserIDIn applies the In predicate on the "user_id" field.
-func UserIDIn(vs ...uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldIn(FieldUserID, vs...))
+// GameIDIn applies the In predicate on the "game_id" field.
+func GameIDIn(vs ...uuid.UUID) predicate.Encounter {
+	return predicate.Encounter(sql.FieldIn(FieldGameID, vs...))
 }
 
-// UserIDNotIn applies the NotIn predicate on the "user_id" field.
-func UserIDNotIn(vs ...uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldNotIn(FieldUserID, vs...))
+// GameIDNotIn applies the NotIn predicate on the "game_id" field.
+func GameIDNotIn(vs ...uuid.UUID) predicate.Encounter {
+	return predicate.Encounter(sql.FieldNotIn(FieldGameID, vs...))
 }
 
-// UserIDGT applies the GT predicate on the "user_id" field.
-func UserIDGT(v uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldGT(FieldUserID, v))
+// ExternalIDEQ applies the EQ predicate on the "external_id" field.
+func ExternalIDEQ(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldEQ(FieldExternalID, v))
 }
 
-// UserIDGTE applies the GTE predicate on the "user_id" field.
-func UserIDGTE(v uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldGTE(FieldUserID, v))
+// ExternalIDNEQ applies the NEQ predicate on the "external_id" field.
+func ExternalIDNEQ(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldNEQ(FieldExternalID, v))
 }
 
-// UserIDLT applies the LT predicate on the "user_id" field.
-func UserIDLT(v uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldLT(FieldUserID, v))
+// ExternalIDIn applies the In predicate on the "external_id" field.
+func ExternalIDIn(vs ...string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldIn(FieldExternalID, vs...))
 }
 
-// UserIDLTE applies the LTE predicate on the "user_id" field.
-func UserIDLTE(v uuid.UUID) predicate.Encounter {
-	return predicate.Encounter(sql.FieldLTE(FieldUserID, v))
+// ExternalIDNotIn applies the NotIn predicate on the "external_id" field.
+func ExternalIDNotIn(vs ...string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldNotIn(FieldExternalID, vs...))
+}
+
+// ExternalIDGT applies the GT predicate on the "external_id" field.
+func ExternalIDGT(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldGT(FieldExternalID, v))
+}
+
+// ExternalIDGTE applies the GTE predicate on the "external_id" field.
+func ExternalIDGTE(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldGTE(FieldExternalID, v))
+}
+
+// ExternalIDLT applies the LT predicate on the "external_id" field.
+func ExternalIDLT(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldLT(FieldExternalID, v))
+}
+
+// ExternalIDLTE applies the LTE predicate on the "external_id" field.
+func ExternalIDLTE(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldLTE(FieldExternalID, v))
+}
+
+// ExternalIDContains applies the Contains predicate on the "external_id" field.
+func ExternalIDContains(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldContains(FieldExternalID, v))
+}
+
+// ExternalIDHasPrefix applies the HasPrefix predicate on the "external_id" field.
+func ExternalIDHasPrefix(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldHasPrefix(FieldExternalID, v))
+}
+
+// ExternalIDHasSuffix applies the HasSuffix predicate on the "external_id" field.
+func ExternalIDHasSuffix(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldHasSuffix(FieldExternalID, v))
+}
+
+// ExternalIDEqualFold applies the EqualFold predicate on the "external_id" field.
+func ExternalIDEqualFold(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldEqualFold(FieldExternalID, v))
+}
+
+// ExternalIDContainsFold applies the ContainsFold predicate on the "external_id" field.
+func ExternalIDContainsFold(v string) predicate.Encounter {
+	return predicate.Encounter(sql.FieldContainsFold(FieldExternalID, v))
+}
+
+// StateIsNil applies the IsNil predicate on the "state" field.
+func StateIsNil() predicate.Encounter {
+	return predicate.Encounter(sql.FieldIsNull(FieldState))
+}
+
+// StateNotNil applies the NotNil predicate on the "state" field.
+func StateNotNil() predicate.Encounter {
+	return predicate.Encounter(sql.FieldNotNull(FieldState))
+}
+
+// HasGame applies the HasEdge predicate on the "game" edge.
+func HasGame() predicate.Encounter {
+	return predicate.Encounter(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, GameTable, GameColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGameWith applies the HasEdge predicate on the "game" edge with a given conditions (other predicates).
+func HasGameWith(preds ...predicate.Game) predicate.Encounter {
+	return predicate.Encounter(func(s *sql.Selector) {
+		step := newGameStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasEncounterCombatants applies the HasEdge predicate on the "encounter_combatants" edge.

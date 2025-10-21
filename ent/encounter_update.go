@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
+	"gm-tool-backend/ent/game"
 	"gm-tool-backend/ent/predicate"
+	"gm-tool-backend/internal/models"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -43,18 +45,55 @@ func (eu *EncounterUpdate) SetNillableName(s *string) *EncounterUpdate {
 	return eu
 }
 
-// SetUserID sets the "user_id" field.
-func (eu *EncounterUpdate) SetUserID(u uuid.UUID) *EncounterUpdate {
-	eu.mutation.SetUserID(u)
+// ClearName clears the value of the "name" field.
+func (eu *EncounterUpdate) ClearName() *EncounterUpdate {
+	eu.mutation.ClearName()
 	return eu
 }
 
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (eu *EncounterUpdate) SetNillableUserID(u *uuid.UUID) *EncounterUpdate {
+// SetGameID sets the "game_id" field.
+func (eu *EncounterUpdate) SetGameID(u uuid.UUID) *EncounterUpdate {
+	eu.mutation.SetGameID(u)
+	return eu
+}
+
+// SetNillableGameID sets the "game_id" field if the given value is not nil.
+func (eu *EncounterUpdate) SetNillableGameID(u *uuid.UUID) *EncounterUpdate {
 	if u != nil {
-		eu.SetUserID(*u)
+		eu.SetGameID(*u)
 	}
 	return eu
+}
+
+// SetExternalID sets the "external_id" field.
+func (eu *EncounterUpdate) SetExternalID(s string) *EncounterUpdate {
+	eu.mutation.SetExternalID(s)
+	return eu
+}
+
+// SetNillableExternalID sets the "external_id" field if the given value is not nil.
+func (eu *EncounterUpdate) SetNillableExternalID(s *string) *EncounterUpdate {
+	if s != nil {
+		eu.SetExternalID(*s)
+	}
+	return eu
+}
+
+// SetState sets the "state" field.
+func (eu *EncounterUpdate) SetState(ms *models.EncounterState) *EncounterUpdate {
+	eu.mutation.SetState(ms)
+	return eu
+}
+
+// ClearState clears the value of the "state" field.
+func (eu *EncounterUpdate) ClearState() *EncounterUpdate {
+	eu.mutation.ClearState()
+	return eu
+}
+
+// SetGame sets the "game" edge to the Game entity.
+func (eu *EncounterUpdate) SetGame(g *Game) *EncounterUpdate {
+	return eu.SetGameID(g.ID)
 }
 
 // AddEncounterCombatantIDs adds the "encounter_combatants" edge to the EncounterCombatant entity by IDs.
@@ -75,6 +114,12 @@ func (eu *EncounterUpdate) AddEncounterCombatants(e ...*EncounterCombatant) *Enc
 // Mutation returns the EncounterMutation object of the builder.
 func (eu *EncounterUpdate) Mutation() *EncounterMutation {
 	return eu.mutation
+}
+
+// ClearGame clears the "game" edge to the Game entity.
+func (eu *EncounterUpdate) ClearGame() *EncounterUpdate {
+	eu.mutation.ClearGame()
+	return eu
 }
 
 // ClearEncounterCombatants clears all "encounter_combatants" edges to the EncounterCombatant entity.
@@ -127,10 +172,8 @@ func (eu *EncounterUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (eu *EncounterUpdate) check() error {
-	if v, ok := eu.mutation.Name(); ok {
-		if err := encounter.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Encounter.name": %w`, err)}
-		}
+	if eu.mutation.GameCleared() && len(eu.mutation.GameIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Encounter.game"`)
 	}
 	return nil
 }
@@ -150,8 +193,46 @@ func (eu *EncounterUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := eu.mutation.Name(); ok {
 		_spec.SetField(encounter.FieldName, field.TypeString, value)
 	}
-	if value, ok := eu.mutation.UserID(); ok {
-		_spec.SetField(encounter.FieldUserID, field.TypeUUID, value)
+	if eu.mutation.NameCleared() {
+		_spec.ClearField(encounter.FieldName, field.TypeString)
+	}
+	if value, ok := eu.mutation.ExternalID(); ok {
+		_spec.SetField(encounter.FieldExternalID, field.TypeString, value)
+	}
+	if value, ok := eu.mutation.State(); ok {
+		_spec.SetField(encounter.FieldState, field.TypeJSON, value)
+	}
+	if eu.mutation.StateCleared() {
+		_spec.ClearField(encounter.FieldState, field.TypeJSON)
+	}
+	if eu.mutation.GameCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounter.GameTable,
+			Columns: []string{encounter.GameColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.GameIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounter.GameTable,
+			Columns: []string{encounter.GameColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if eu.mutation.EncounterCombatantsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -232,18 +313,55 @@ func (euo *EncounterUpdateOne) SetNillableName(s *string) *EncounterUpdateOne {
 	return euo
 }
 
-// SetUserID sets the "user_id" field.
-func (euo *EncounterUpdateOne) SetUserID(u uuid.UUID) *EncounterUpdateOne {
-	euo.mutation.SetUserID(u)
+// ClearName clears the value of the "name" field.
+func (euo *EncounterUpdateOne) ClearName() *EncounterUpdateOne {
+	euo.mutation.ClearName()
 	return euo
 }
 
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (euo *EncounterUpdateOne) SetNillableUserID(u *uuid.UUID) *EncounterUpdateOne {
+// SetGameID sets the "game_id" field.
+func (euo *EncounterUpdateOne) SetGameID(u uuid.UUID) *EncounterUpdateOne {
+	euo.mutation.SetGameID(u)
+	return euo
+}
+
+// SetNillableGameID sets the "game_id" field if the given value is not nil.
+func (euo *EncounterUpdateOne) SetNillableGameID(u *uuid.UUID) *EncounterUpdateOne {
 	if u != nil {
-		euo.SetUserID(*u)
+		euo.SetGameID(*u)
 	}
 	return euo
+}
+
+// SetExternalID sets the "external_id" field.
+func (euo *EncounterUpdateOne) SetExternalID(s string) *EncounterUpdateOne {
+	euo.mutation.SetExternalID(s)
+	return euo
+}
+
+// SetNillableExternalID sets the "external_id" field if the given value is not nil.
+func (euo *EncounterUpdateOne) SetNillableExternalID(s *string) *EncounterUpdateOne {
+	if s != nil {
+		euo.SetExternalID(*s)
+	}
+	return euo
+}
+
+// SetState sets the "state" field.
+func (euo *EncounterUpdateOne) SetState(ms *models.EncounterState) *EncounterUpdateOne {
+	euo.mutation.SetState(ms)
+	return euo
+}
+
+// ClearState clears the value of the "state" field.
+func (euo *EncounterUpdateOne) ClearState() *EncounterUpdateOne {
+	euo.mutation.ClearState()
+	return euo
+}
+
+// SetGame sets the "game" edge to the Game entity.
+func (euo *EncounterUpdateOne) SetGame(g *Game) *EncounterUpdateOne {
+	return euo.SetGameID(g.ID)
 }
 
 // AddEncounterCombatantIDs adds the "encounter_combatants" edge to the EncounterCombatant entity by IDs.
@@ -264,6 +382,12 @@ func (euo *EncounterUpdateOne) AddEncounterCombatants(e ...*EncounterCombatant) 
 // Mutation returns the EncounterMutation object of the builder.
 func (euo *EncounterUpdateOne) Mutation() *EncounterMutation {
 	return euo.mutation
+}
+
+// ClearGame clears the "game" edge to the Game entity.
+func (euo *EncounterUpdateOne) ClearGame() *EncounterUpdateOne {
+	euo.mutation.ClearGame()
+	return euo
 }
 
 // ClearEncounterCombatants clears all "encounter_combatants" edges to the EncounterCombatant entity.
@@ -329,10 +453,8 @@ func (euo *EncounterUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (euo *EncounterUpdateOne) check() error {
-	if v, ok := euo.mutation.Name(); ok {
-		if err := encounter.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Encounter.name": %w`, err)}
-		}
+	if euo.mutation.GameCleared() && len(euo.mutation.GameIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Encounter.game"`)
 	}
 	return nil
 }
@@ -369,8 +491,46 @@ func (euo *EncounterUpdateOne) sqlSave(ctx context.Context) (_node *Encounter, e
 	if value, ok := euo.mutation.Name(); ok {
 		_spec.SetField(encounter.FieldName, field.TypeString, value)
 	}
-	if value, ok := euo.mutation.UserID(); ok {
-		_spec.SetField(encounter.FieldUserID, field.TypeUUID, value)
+	if euo.mutation.NameCleared() {
+		_spec.ClearField(encounter.FieldName, field.TypeString)
+	}
+	if value, ok := euo.mutation.ExternalID(); ok {
+		_spec.SetField(encounter.FieldExternalID, field.TypeString, value)
+	}
+	if value, ok := euo.mutation.State(); ok {
+		_spec.SetField(encounter.FieldState, field.TypeJSON, value)
+	}
+	if euo.mutation.StateCleared() {
+		_spec.ClearField(encounter.FieldState, field.TypeJSON)
+	}
+	if euo.mutation.GameCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounter.GameTable,
+			Columns: []string{encounter.GameColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.GameIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounter.GameTable,
+			Columns: []string{encounter.GameColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if euo.mutation.EncounterCombatantsCleared() {
 		edge := &sqlgraph.EdgeSpec{

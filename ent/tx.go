@@ -28,6 +28,8 @@ type Tx struct {
 	EncounterCombatant *EncounterCombatantClient
 	// EncounterDifficultyThreshold is the client for interacting with the EncounterDifficultyThreshold builders.
 	EncounterDifficultyThreshold *EncounterDifficultyThresholdClient
+	// Game is the client for interacting with the Game builders.
+	Game *GameClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -169,6 +171,7 @@ func (tx *Tx) init() {
 	tx.Encounter = NewEncounterClient(tx.config)
 	tx.EncounterCombatant = NewEncounterCombatantClient(tx.config)
 	tx.EncounterDifficultyThreshold = NewEncounterDifficultyThresholdClient(tx.config)
+	tx.Game = NewGameClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

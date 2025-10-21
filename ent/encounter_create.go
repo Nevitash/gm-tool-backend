@@ -8,7 +8,11 @@ import (
 	"fmt"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
+	"gm-tool-backend/ent/game"
+	"gm-tool-backend/internal/models"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -19,6 +23,7 @@ type EncounterCreate struct {
 	config
 	mutation *EncounterMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetName sets the "name" field.
@@ -27,9 +32,29 @@ func (ec *EncounterCreate) SetName(s string) *EncounterCreate {
 	return ec
 }
 
-// SetUserID sets the "user_id" field.
-func (ec *EncounterCreate) SetUserID(u uuid.UUID) *EncounterCreate {
-	ec.mutation.SetUserID(u)
+// SetNillableName sets the "name" field if the given value is not nil.
+func (ec *EncounterCreate) SetNillableName(s *string) *EncounterCreate {
+	if s != nil {
+		ec.SetName(*s)
+	}
+	return ec
+}
+
+// SetGameID sets the "game_id" field.
+func (ec *EncounterCreate) SetGameID(u uuid.UUID) *EncounterCreate {
+	ec.mutation.SetGameID(u)
+	return ec
+}
+
+// SetExternalID sets the "external_id" field.
+func (ec *EncounterCreate) SetExternalID(s string) *EncounterCreate {
+	ec.mutation.SetExternalID(s)
+	return ec
+}
+
+// SetState sets the "state" field.
+func (ec *EncounterCreate) SetState(ms *models.EncounterState) *EncounterCreate {
+	ec.mutation.SetState(ms)
 	return ec
 }
 
@@ -45,6 +70,11 @@ func (ec *EncounterCreate) SetNillableID(u *uuid.UUID) *EncounterCreate {
 		ec.SetID(*u)
 	}
 	return ec
+}
+
+// SetGame sets the "game" edge to the Game entity.
+func (ec *EncounterCreate) SetGame(g *Game) *EncounterCreate {
+	return ec.SetGameID(g.ID)
 }
 
 // AddEncounterCombatantIDs adds the "encounter_combatants" edge to the EncounterCombatant entity by IDs.
@@ -105,16 +135,14 @@ func (ec *EncounterCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (ec *EncounterCreate) check() error {
-	if _, ok := ec.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Encounter.name"`)}
+	if _, ok := ec.mutation.GameID(); !ok {
+		return &ValidationError{Name: "game_id", err: errors.New(`ent: missing required field "Encounter.game_id"`)}
 	}
-	if v, ok := ec.mutation.Name(); ok {
-		if err := encounter.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Encounter.name": %w`, err)}
-		}
+	if _, ok := ec.mutation.ExternalID(); !ok {
+		return &ValidationError{Name: "external_id", err: errors.New(`ent: missing required field "Encounter.external_id"`)}
 	}
-	if _, ok := ec.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Encounter.user_id"`)}
+	if len(ec.mutation.GameIDs()) == 0 {
+		return &ValidationError{Name: "game", err: errors.New(`ent: missing required edge "Encounter.game"`)}
 	}
 	return nil
 }
@@ -147,6 +175,7 @@ func (ec *EncounterCreate) createSpec() (*Encounter, *sqlgraph.CreateSpec) {
 		_node = &Encounter{config: ec.config}
 		_spec = sqlgraph.NewCreateSpec(encounter.Table, sqlgraph.NewFieldSpec(encounter.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = ec.conflict
 	if id, ok := ec.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -155,9 +184,30 @@ func (ec *EncounterCreate) createSpec() (*Encounter, *sqlgraph.CreateSpec) {
 		_spec.SetField(encounter.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := ec.mutation.UserID(); ok {
-		_spec.SetField(encounter.FieldUserID, field.TypeUUID, value)
-		_node.UserID = value
+	if value, ok := ec.mutation.ExternalID(); ok {
+		_spec.SetField(encounter.FieldExternalID, field.TypeString, value)
+		_node.ExternalID = value
+	}
+	if value, ok := ec.mutation.State(); ok {
+		_spec.SetField(encounter.FieldState, field.TypeJSON, value)
+		_node.State = value
+	}
+	if nodes := ec.mutation.GameIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   encounter.GameTable,
+			Columns: []string{encounter.GameColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.GameID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := ec.mutation.EncounterCombatantsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -178,11 +228,277 @@ func (ec *EncounterCreate) createSpec() (*Encounter, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Encounter.Create().
+//		SetName(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.EncounterUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (ec *EncounterCreate) OnConflict(opts ...sql.ConflictOption) *EncounterUpsertOne {
+	ec.conflict = opts
+	return &EncounterUpsertOne{
+		create: ec,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Encounter.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (ec *EncounterCreate) OnConflictColumns(columns ...string) *EncounterUpsertOne {
+	ec.conflict = append(ec.conflict, sql.ConflictColumns(columns...))
+	return &EncounterUpsertOne{
+		create: ec,
+	}
+}
+
+type (
+	// EncounterUpsertOne is the builder for "upsert"-ing
+	//  one Encounter node.
+	EncounterUpsertOne struct {
+		create *EncounterCreate
+	}
+
+	// EncounterUpsert is the "OnConflict" setter.
+	EncounterUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetName sets the "name" field.
+func (u *EncounterUpsert) SetName(v string) *EncounterUpsert {
+	u.Set(encounter.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *EncounterUpsert) UpdateName() *EncounterUpsert {
+	u.SetExcluded(encounter.FieldName)
+	return u
+}
+
+// ClearName clears the value of the "name" field.
+func (u *EncounterUpsert) ClearName() *EncounterUpsert {
+	u.SetNull(encounter.FieldName)
+	return u
+}
+
+// SetGameID sets the "game_id" field.
+func (u *EncounterUpsert) SetGameID(v uuid.UUID) *EncounterUpsert {
+	u.Set(encounter.FieldGameID, v)
+	return u
+}
+
+// UpdateGameID sets the "game_id" field to the value that was provided on create.
+func (u *EncounterUpsert) UpdateGameID() *EncounterUpsert {
+	u.SetExcluded(encounter.FieldGameID)
+	return u
+}
+
+// SetExternalID sets the "external_id" field.
+func (u *EncounterUpsert) SetExternalID(v string) *EncounterUpsert {
+	u.Set(encounter.FieldExternalID, v)
+	return u
+}
+
+// UpdateExternalID sets the "external_id" field to the value that was provided on create.
+func (u *EncounterUpsert) UpdateExternalID() *EncounterUpsert {
+	u.SetExcluded(encounter.FieldExternalID)
+	return u
+}
+
+// SetState sets the "state" field.
+func (u *EncounterUpsert) SetState(v *models.EncounterState) *EncounterUpsert {
+	u.Set(encounter.FieldState, v)
+	return u
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *EncounterUpsert) UpdateState() *EncounterUpsert {
+	u.SetExcluded(encounter.FieldState)
+	return u
+}
+
+// ClearState clears the value of the "state" field.
+func (u *EncounterUpsert) ClearState() *EncounterUpsert {
+	u.SetNull(encounter.FieldState)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.Encounter.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(encounter.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *EncounterUpsertOne) UpdateNewValues() *EncounterUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(encounter.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Encounter.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *EncounterUpsertOne) Ignore() *EncounterUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *EncounterUpsertOne) DoNothing() *EncounterUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the EncounterCreate.OnConflict
+// documentation for more info.
+func (u *EncounterUpsertOne) Update(set func(*EncounterUpsert)) *EncounterUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&EncounterUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *EncounterUpsertOne) SetName(v string) *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *EncounterUpsertOne) UpdateName() *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.UpdateName()
+	})
+}
+
+// ClearName clears the value of the "name" field.
+func (u *EncounterUpsertOne) ClearName() *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.ClearName()
+	})
+}
+
+// SetGameID sets the "game_id" field.
+func (u *EncounterUpsertOne) SetGameID(v uuid.UUID) *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.SetGameID(v)
+	})
+}
+
+// UpdateGameID sets the "game_id" field to the value that was provided on create.
+func (u *EncounterUpsertOne) UpdateGameID() *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.UpdateGameID()
+	})
+}
+
+// SetExternalID sets the "external_id" field.
+func (u *EncounterUpsertOne) SetExternalID(v string) *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.SetExternalID(v)
+	})
+}
+
+// UpdateExternalID sets the "external_id" field to the value that was provided on create.
+func (u *EncounterUpsertOne) UpdateExternalID() *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.UpdateExternalID()
+	})
+}
+
+// SetState sets the "state" field.
+func (u *EncounterUpsertOne) SetState(v *models.EncounterState) *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.SetState(v)
+	})
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *EncounterUpsertOne) UpdateState() *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.UpdateState()
+	})
+}
+
+// ClearState clears the value of the "state" field.
+func (u *EncounterUpsertOne) ClearState() *EncounterUpsertOne {
+	return u.Update(func(s *EncounterUpsert) {
+		s.ClearState()
+	})
+}
+
+// Exec executes the query.
+func (u *EncounterUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for EncounterCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *EncounterUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *EncounterUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: EncounterUpsertOne.ID is not supported by MySQL driver. Use EncounterUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *EncounterUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // EncounterCreateBulk is the builder for creating many Encounter entities in bulk.
 type EncounterCreateBulk struct {
 	config
 	err      error
 	builders []*EncounterCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the Encounter entities in the database.
@@ -212,6 +528,7 @@ func (ecb *EncounterCreateBulk) Save(ctx context.Context) ([]*Encounter, error) 
 					_, err = mutators[i+1].Mutate(root, ecb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = ecb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, ecb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -258,6 +575,190 @@ func (ecb *EncounterCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (ecb *EncounterCreateBulk) ExecX(ctx context.Context) {
 	if err := ecb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.Encounter.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.EncounterUpsert) {
+//			SetName(v+v).
+//		}).
+//		Exec(ctx)
+func (ecb *EncounterCreateBulk) OnConflict(opts ...sql.ConflictOption) *EncounterUpsertBulk {
+	ecb.conflict = opts
+	return &EncounterUpsertBulk{
+		create: ecb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.Encounter.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (ecb *EncounterCreateBulk) OnConflictColumns(columns ...string) *EncounterUpsertBulk {
+	ecb.conflict = append(ecb.conflict, sql.ConflictColumns(columns...))
+	return &EncounterUpsertBulk{
+		create: ecb,
+	}
+}
+
+// EncounterUpsertBulk is the builder for "upsert"-ing
+// a bulk of Encounter nodes.
+type EncounterUpsertBulk struct {
+	create *EncounterCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.Encounter.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(encounter.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *EncounterUpsertBulk) UpdateNewValues() *EncounterUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(encounter.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.Encounter.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *EncounterUpsertBulk) Ignore() *EncounterUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *EncounterUpsertBulk) DoNothing() *EncounterUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the EncounterCreateBulk.OnConflict
+// documentation for more info.
+func (u *EncounterUpsertBulk) Update(set func(*EncounterUpsert)) *EncounterUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&EncounterUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *EncounterUpsertBulk) SetName(v string) *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *EncounterUpsertBulk) UpdateName() *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.UpdateName()
+	})
+}
+
+// ClearName clears the value of the "name" field.
+func (u *EncounterUpsertBulk) ClearName() *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.ClearName()
+	})
+}
+
+// SetGameID sets the "game_id" field.
+func (u *EncounterUpsertBulk) SetGameID(v uuid.UUID) *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.SetGameID(v)
+	})
+}
+
+// UpdateGameID sets the "game_id" field to the value that was provided on create.
+func (u *EncounterUpsertBulk) UpdateGameID() *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.UpdateGameID()
+	})
+}
+
+// SetExternalID sets the "external_id" field.
+func (u *EncounterUpsertBulk) SetExternalID(v string) *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.SetExternalID(v)
+	})
+}
+
+// UpdateExternalID sets the "external_id" field to the value that was provided on create.
+func (u *EncounterUpsertBulk) UpdateExternalID() *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.UpdateExternalID()
+	})
+}
+
+// SetState sets the "state" field.
+func (u *EncounterUpsertBulk) SetState(v *models.EncounterState) *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.SetState(v)
+	})
+}
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *EncounterUpsertBulk) UpdateState() *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.UpdateState()
+	})
+}
+
+// ClearState clears the value of the "state" field.
+func (u *EncounterUpsertBulk) ClearState() *EncounterUpsertBulk {
+	return u.Update(func(s *EncounterUpsert) {
+		s.ClearState()
+	})
+}
+
+// Exec executes the query.
+func (u *EncounterUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the EncounterCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for EncounterCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *EncounterUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

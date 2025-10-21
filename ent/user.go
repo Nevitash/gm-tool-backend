@@ -26,25 +26,26 @@ type User struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
+	game_players *uuid.UUID
 	selectValues sql.SelectValues
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
-	// Encounter holds the value of the encounter edge.
-	Encounter []*Encounter `json:"encounter,omitempty"`
+	// Games holds the value of the games edge.
+	Games []*Game `json:"games,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// EncounterOrErr returns the Encounter value or an error if the edge
+// GamesOrErr returns the Games value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) EncounterOrErr() ([]*Encounter, error) {
+func (e UserEdges) GamesOrErr() ([]*Game, error) {
 	if e.loadedTypes[0] {
-		return e.Encounter, nil
+		return e.Games, nil
 	}
-	return nil, &NotLoadedError{edge: "encounter"}
+	return nil, &NotLoadedError{edge: "games"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -58,6 +59,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case user.FieldID:
 			values[i] = new(uuid.UUID)
+		case user.ForeignKeys[0]: // game_players
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -97,6 +100,13 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.Verified = value.Bool
 			}
+		case user.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field game_players", values[i])
+			} else if value.Valid {
+				u.game_players = new(uuid.UUID)
+				*u.game_players = *value.S.(*uuid.UUID)
+			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
 		}
@@ -110,9 +120,9 @@ func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
 }
 
-// QueryEncounter queries the "encounter" edge of the User entity.
-func (u *User) QueryEncounter() *EncounterQuery {
-	return NewUserClient(u.config).QueryEncounter(u)
+// QueryGames queries the "games" edge of the User entity.
+func (u *User) QueryGames() *GameQuery {
+	return NewUserClient(u.config).QueryGames(u)
 }
 
 // Update returns a builder for updating this User.

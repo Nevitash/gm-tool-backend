@@ -3,8 +3,11 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"gm-tool-backend/ent/encounter"
+	"gm-tool-backend/ent/game"
+	"gm-tool-backend/internal/models"
 	"strings"
 
 	"entgo.io/ent"
@@ -19,28 +22,44 @@ type Encounter struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// ID of the user who owns this encounter
-	UserID uuid.UUID `json:"user_id,omitempty"`
+	// GameID holds the value of the "game_id" field.
+	GameID uuid.UUID `json:"game_id,omitempty"`
+	// ExternalID holds the value of the "external_id" field.
+	ExternalID string `json:"external_id,omitempty"`
+	// State holds the value of the "state" field.
+	State *models.EncounterState `json:"state,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EncounterQuery when eager-loading is set.
-	Edges          EncounterEdges `json:"edges"`
-	user_encounter *uuid.UUID
-	selectValues   sql.SelectValues
+	Edges        EncounterEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // EncounterEdges holds the relations/edges for other nodes in the graph.
 type EncounterEdges struct {
+	// Game holds the value of the game edge.
+	Game *Game `json:"game,omitempty"`
 	// EncounterCombatants holds the value of the encounter_combatants edge.
 	EncounterCombatants []*EncounterCombatant `json:"encounter_combatants,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// GameOrErr returns the Game value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e EncounterEdges) GameOrErr() (*Game, error) {
+	if e.Game != nil {
+		return e.Game, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: game.Label}
+	}
+	return nil, &NotLoadedError{edge: "game"}
 }
 
 // EncounterCombatantsOrErr returns the EncounterCombatants value or an error if the edge
 // was not loaded in eager-loading.
 func (e EncounterEdges) EncounterCombatantsOrErr() ([]*EncounterCombatant, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.EncounterCombatants, nil
 	}
 	return nil, &NotLoadedError{edge: "encounter_combatants"}
@@ -51,12 +70,12 @@ func (*Encounter) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case encounter.FieldName:
+		case encounter.FieldState:
+			values[i] = new([]byte)
+		case encounter.FieldName, encounter.FieldExternalID:
 			values[i] = new(sql.NullString)
-		case encounter.FieldID, encounter.FieldUserID:
+		case encounter.FieldID, encounter.FieldGameID:
 			values[i] = new(uuid.UUID)
-		case encounter.ForeignKeys[0]: // user_encounter
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -84,18 +103,25 @@ func (e *Encounter) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				e.Name = value.String
 			}
-		case encounter.FieldUserID:
+		case encounter.FieldGameID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+				return fmt.Errorf("unexpected type %T for field game_id", values[i])
 			} else if value != nil {
-				e.UserID = *value
+				e.GameID = *value
 			}
-		case encounter.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field user_encounter", values[i])
+		case encounter.FieldExternalID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field external_id", values[i])
 			} else if value.Valid {
-				e.user_encounter = new(uuid.UUID)
-				*e.user_encounter = *value.S.(*uuid.UUID)
+				e.ExternalID = value.String
+			}
+		case encounter.FieldState:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field state", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &e.State); err != nil {
+					return fmt.Errorf("unmarshal field state: %w", err)
+				}
 			}
 		default:
 			e.selectValues.Set(columns[i], values[i])
@@ -108,6 +134,11 @@ func (e *Encounter) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (e *Encounter) Value(name string) (ent.Value, error) {
 	return e.selectValues.Get(name)
+}
+
+// QueryGame queries the "game" edge of the Encounter entity.
+func (e *Encounter) QueryGame() *GameQuery {
+	return NewEncounterClient(e.config).QueryGame(e)
 }
 
 // QueryEncounterCombatants queries the "encounter_combatants" edge of the Encounter entity.
@@ -141,8 +172,14 @@ func (e *Encounter) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(e.Name)
 	builder.WriteString(", ")
-	builder.WriteString("user_id=")
-	builder.WriteString(fmt.Sprintf("%v", e.UserID))
+	builder.WriteString("game_id=")
+	builder.WriteString(fmt.Sprintf("%v", e.GameID))
+	builder.WriteString(", ")
+	builder.WriteString("external_id=")
+	builder.WriteString(e.ExternalID)
+	builder.WriteString(", ")
+	builder.WriteString("state=")
+	builder.WriteString(fmt.Sprintf("%v", e.State))
 	builder.WriteByte(')')
 	return builder.String()
 }

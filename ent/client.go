@@ -19,6 +19,7 @@ import (
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
 	"gm-tool-backend/ent/encounterdifficultythreshold"
+	"gm-tool-backend/ent/game"
 	"gm-tool-backend/ent/user"
 
 	"entgo.io/ent"
@@ -49,6 +50,8 @@ type Client struct {
 	EncounterCombatant *EncounterCombatantClient
 	// EncounterDifficultyThreshold is the client for interacting with the EncounterDifficultyThreshold builders.
 	EncounterDifficultyThreshold *EncounterDifficultyThresholdClient
+	// Game is the client for interacting with the Game builders.
+	Game *GameClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -70,6 +73,7 @@ func (c *Client) init() {
 	c.Encounter = NewEncounterClient(c.config)
 	c.EncounterCombatant = NewEncounterCombatantClient(c.config)
 	c.EncounterDifficultyThreshold = NewEncounterDifficultyThresholdClient(c.config)
+	c.Game = NewGameClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -171,6 +175,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Encounter:                    NewEncounterClient(cfg),
 		EncounterCombatant:           NewEncounterCombatantClient(cfg),
 		EncounterDifficultyThreshold: NewEncounterDifficultyThresholdClient(cfg),
+		Game:                         NewGameClient(cfg),
 		User:                         NewUserClient(cfg),
 	}, nil
 }
@@ -199,6 +204,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Encounter:                    NewEncounterClient(cfg),
 		EncounterCombatant:           NewEncounterCombatantClient(cfg),
 		EncounterDifficultyThreshold: NewEncounterDifficultyThresholdClient(cfg),
+		Game:                         NewGameClient(cfg),
 		User:                         NewUserClient(cfg),
 	}, nil
 }
@@ -230,7 +236,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ChallangeRating, c.Combatant, c.CrSpellSlot, c.CrStat, c.Difficulty,
-		c.Encounter, c.EncounterCombatant, c.EncounterDifficultyThreshold, c.User,
+		c.Encounter, c.EncounterCombatant, c.EncounterDifficultyThreshold, c.Game,
+		c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -241,7 +248,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ChallangeRating, c.Combatant, c.CrSpellSlot, c.CrStat, c.Difficulty,
-		c.Encounter, c.EncounterCombatant, c.EncounterDifficultyThreshold, c.User,
+		c.Encounter, c.EncounterCombatant, c.EncounterDifficultyThreshold, c.Game,
+		c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -266,6 +274,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EncounterCombatant.mutate(ctx, m)
 	case *EncounterDifficultyThresholdMutation:
 		return c.EncounterDifficultyThreshold.mutate(ctx, m)
+	case *GameMutation:
+		return c.Game.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
@@ -1142,6 +1152,22 @@ func (c *EncounterClient) GetX(ctx context.Context, id uuid.UUID) *Encounter {
 	return obj
 }
 
+// QueryGame queries the game edge of a Encounter.
+func (c *EncounterClient) QueryGame(e *Encounter) *GameQuery {
+	query := (&GameClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(encounter.Table, encounter.FieldID, id),
+			sqlgraph.To(game.Table, game.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, encounter.GameTable, encounter.GameColumn),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryEncounterCombatants queries the encounter_combatants edge of a Encounter.
 func (c *EncounterClient) QueryEncounterCombatants(e *Encounter) *EncounterCombatantQuery {
 	query := (&EncounterCombatantClient{config: c.config}).Query()
@@ -1497,6 +1523,187 @@ func (c *EncounterDifficultyThresholdClient) mutate(ctx context.Context, m *Enco
 	}
 }
 
+// GameClient is a client for the Game schema.
+type GameClient struct {
+	config
+}
+
+// NewGameClient returns a client for the Game from the given config.
+func NewGameClient(c config) *GameClient {
+	return &GameClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `game.Hooks(f(g(h())))`.
+func (c *GameClient) Use(hooks ...Hook) {
+	c.hooks.Game = append(c.hooks.Game, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `game.Intercept(f(g(h())))`.
+func (c *GameClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Game = append(c.inters.Game, interceptors...)
+}
+
+// Create returns a builder for creating a Game entity.
+func (c *GameClient) Create() *GameCreate {
+	mutation := newGameMutation(c.config, OpCreate)
+	return &GameCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Game entities.
+func (c *GameClient) CreateBulk(builders ...*GameCreate) *GameCreateBulk {
+	return &GameCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *GameClient) MapCreateBulk(slice any, setFunc func(*GameCreate, int)) *GameCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &GameCreateBulk{err: fmt.Errorf("calling to GameClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*GameCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &GameCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Game.
+func (c *GameClient) Update() *GameUpdate {
+	mutation := newGameMutation(c.config, OpUpdate)
+	return &GameUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *GameClient) UpdateOne(ga *Game) *GameUpdateOne {
+	mutation := newGameMutation(c.config, OpUpdateOne, withGame(ga))
+	return &GameUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *GameClient) UpdateOneID(id uuid.UUID) *GameUpdateOne {
+	mutation := newGameMutation(c.config, OpUpdateOne, withGameID(id))
+	return &GameUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Game.
+func (c *GameClient) Delete() *GameDelete {
+	mutation := newGameMutation(c.config, OpDelete)
+	return &GameDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *GameClient) DeleteOne(ga *Game) *GameDeleteOne {
+	return c.DeleteOneID(ga.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *GameClient) DeleteOneID(id uuid.UUID) *GameDeleteOne {
+	builder := c.Delete().Where(game.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &GameDeleteOne{builder}
+}
+
+// Query returns a query builder for Game.
+func (c *GameClient) Query() *GameQuery {
+	return &GameQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeGame},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Game entity by its id.
+func (c *GameClient) Get(ctx context.Context, id uuid.UUID) (*Game, error) {
+	return c.Query().Where(game.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *GameClient) GetX(ctx context.Context, id uuid.UUID) *Game {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Game.
+func (c *GameClient) QueryUser(ga *Game) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ga.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(game.Table, game.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, game.UserTable, game.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(ga.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPlayers queries the players edge of a Game.
+func (c *GameClient) QueryPlayers(ga *Game) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ga.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(game.Table, game.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, game.PlayersTable, game.PlayersColumn),
+		)
+		fromV = sqlgraph.Neighbors(ga.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEncounters queries the encounters edge of a Game.
+func (c *GameClient) QueryEncounters(ga *Game) *EncounterQuery {
+	query := (&EncounterClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ga.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(game.Table, game.FieldID, id),
+			sqlgraph.To(encounter.Table, encounter.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, game.EncountersTable, game.EncountersColumn),
+		)
+		fromV = sqlgraph.Neighbors(ga.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *GameClient) Hooks() []Hook {
+	return c.hooks.Game
+}
+
+// Interceptors returns the client interceptors.
+func (c *GameClient) Interceptors() []Interceptor {
+	return c.inters.Game
+}
+
+func (c *GameClient) mutate(ctx context.Context, m *GameMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&GameCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&GameUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&GameUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&GameDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Game mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -1605,15 +1812,15 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
-// QueryEncounter queries the encounter edge of a User.
-func (c *UserClient) QueryEncounter(u *User) *EncounterQuery {
-	query := (&EncounterClient{config: c.config}).Query()
+// QueryGames queries the games edge of a User.
+func (c *UserClient) QueryGames(u *User) *GameQuery {
+	query := (&GameClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(encounter.Table, encounter.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.EncounterTable, user.EncounterColumn),
+			sqlgraph.To(game.Table, game.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.GamesTable, user.GamesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -1650,10 +1857,10 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 type (
 	hooks struct {
 		ChallangeRating, Combatant, CrSpellSlot, CrStat, Difficulty, Encounter,
-		EncounterCombatant, EncounterDifficultyThreshold, User []ent.Hook
+		EncounterCombatant, EncounterDifficultyThreshold, Game, User []ent.Hook
 	}
 	inters struct {
 		ChallangeRating, Combatant, CrSpellSlot, CrStat, Difficulty, Encounter,
-		EncounterCombatant, EncounterDifficultyThreshold, User []ent.Interceptor
+		EncounterCombatant, EncounterDifficultyThreshold, Game, User []ent.Interceptor
 	}
 )

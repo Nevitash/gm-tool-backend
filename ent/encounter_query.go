@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"gm-tool-backend/ent/encounter"
 	"gm-tool-backend/ent/encountercombatant"
+	"gm-tool-backend/ent/game"
 	"gm-tool-backend/ent/predicate"
 	"math"
 
@@ -25,8 +26,8 @@ type EncounterQuery struct {
 	order                   []encounter.OrderOption
 	inters                  []Interceptor
 	predicates              []predicate.Encounter
+	withGame                *GameQuery
 	withEncounterCombatants *EncounterCombatantQuery
-	withFKs                 bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,6 +62,28 @@ func (eq *EncounterQuery) Unique(unique bool) *EncounterQuery {
 func (eq *EncounterQuery) Order(o ...encounter.OrderOption) *EncounterQuery {
 	eq.order = append(eq.order, o...)
 	return eq
+}
+
+// QueryGame chains the current query on the "game" edge.
+func (eq *EncounterQuery) QueryGame() *GameQuery {
+	query := (&GameClient{config: eq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := eq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := eq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(encounter.Table, encounter.FieldID, selector),
+			sqlgraph.To(game.Table, game.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, encounter.GameTable, encounter.GameColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryEncounterCombatants chains the current query on the "encounter_combatants" edge.
@@ -277,11 +300,23 @@ func (eq *EncounterQuery) Clone() *EncounterQuery {
 		order:                   append([]encounter.OrderOption{}, eq.order...),
 		inters:                  append([]Interceptor{}, eq.inters...),
 		predicates:              append([]predicate.Encounter{}, eq.predicates...),
+		withGame:                eq.withGame.Clone(),
 		withEncounterCombatants: eq.withEncounterCombatants.Clone(),
 		// clone intermediate query.
 		sql:  eq.sql.Clone(),
 		path: eq.path,
 	}
+}
+
+// WithGame tells the query-builder to eager-load the nodes that are connected to
+// the "game" edge. The optional arguments are used to configure the query builder of the edge.
+func (eq *EncounterQuery) WithGame(opts ...func(*GameQuery)) *EncounterQuery {
+	query := (&GameClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	eq.withGame = query
+	return eq
 }
 
 // WithEncounterCombatants tells the query-builder to eager-load the nodes that are connected to
@@ -372,15 +407,12 @@ func (eq *EncounterQuery) prepareQuery(ctx context.Context) error {
 func (eq *EncounterQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Encounter, error) {
 	var (
 		nodes       = []*Encounter{}
-		withFKs     = eq.withFKs
 		_spec       = eq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
+			eq.withGame != nil,
 			eq.withEncounterCombatants != nil,
 		}
 	)
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, encounter.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Encounter).scanValues(nil, columns)
 	}
@@ -399,6 +431,12 @@ func (eq *EncounterQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*En
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := eq.withGame; query != nil {
+		if err := eq.loadGame(ctx, query, nodes, nil,
+			func(n *Encounter, e *Game) { n.Edges.Game = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := eq.withEncounterCombatants; query != nil {
 		if err := eq.loadEncounterCombatants(ctx, query, nodes,
 			func(n *Encounter) { n.Edges.EncounterCombatants = []*EncounterCombatant{} },
@@ -411,6 +449,35 @@ func (eq *EncounterQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*En
 	return nodes, nil
 }
 
+func (eq *EncounterQuery) loadGame(ctx context.Context, query *GameQuery, nodes []*Encounter, init func(*Encounter), assign func(*Encounter, *Game)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Encounter)
+	for i := range nodes {
+		fk := nodes[i].GameID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(game.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "game_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (eq *EncounterQuery) loadEncounterCombatants(ctx context.Context, query *EncounterCombatantQuery, nodes []*Encounter, init func(*Encounter), assign func(*Encounter, *EncounterCombatant)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Encounter)
@@ -466,6 +533,9 @@ func (eq *EncounterQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != encounter.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if eq.withGame != nil {
+			_spec.Node.AddColumnOnce(encounter.FieldGameID)
 		}
 	}
 	if ps := eq.predicates; len(ps) > 0 {

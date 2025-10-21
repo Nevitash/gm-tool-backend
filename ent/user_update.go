@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gm-tool-backend/ent/encounter"
+	"gm-tool-backend/ent/game"
 	"gm-tool-backend/ent/predicate"
 	"gm-tool-backend/ent/user"
 
@@ -71,19 +71,19 @@ func (uu *UserUpdate) SetNillableVerified(b *bool) *UserUpdate {
 	return uu
 }
 
-// AddEncounterIDs adds the "encounter" edge to the Encounter entity by IDs.
-func (uu *UserUpdate) AddEncounterIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.AddEncounterIDs(ids...)
+// AddGameIDs adds the "games" edge to the Game entity by IDs.
+func (uu *UserUpdate) AddGameIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddGameIDs(ids...)
 	return uu
 }
 
-// AddEncounter adds the "encounter" edges to the Encounter entity.
-func (uu *UserUpdate) AddEncounter(e ...*Encounter) *UserUpdate {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
+// AddGames adds the "games" edges to the Game entity.
+func (uu *UserUpdate) AddGames(g ...*Game) *UserUpdate {
+	ids := make([]uuid.UUID, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
 	}
-	return uu.AddEncounterIDs(ids...)
+	return uu.AddGameIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -91,25 +91,25 @@ func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
 }
 
-// ClearEncounter clears all "encounter" edges to the Encounter entity.
-func (uu *UserUpdate) ClearEncounter() *UserUpdate {
-	uu.mutation.ClearEncounter()
+// ClearGames clears all "games" edges to the Game entity.
+func (uu *UserUpdate) ClearGames() *UserUpdate {
+	uu.mutation.ClearGames()
 	return uu
 }
 
-// RemoveEncounterIDs removes the "encounter" edge to Encounter entities by IDs.
-func (uu *UserUpdate) RemoveEncounterIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.RemoveEncounterIDs(ids...)
+// RemoveGameIDs removes the "games" edge to Game entities by IDs.
+func (uu *UserUpdate) RemoveGameIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveGameIDs(ids...)
 	return uu
 }
 
-// RemoveEncounter removes "encounter" edges to Encounter entities.
-func (uu *UserUpdate) RemoveEncounter(e ...*Encounter) *UserUpdate {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
+// RemoveGames removes "games" edges to Game entities.
+func (uu *UserUpdate) RemoveGames(g ...*Game) *UserUpdate {
+	ids := make([]uuid.UUID, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
 	}
-	return uu.RemoveEncounterIDs(ids...)
+	return uu.RemoveGameIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -175,28 +175,28 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.Verified(); ok {
 		_spec.SetField(user.FieldVerified, field.TypeBool, value)
 	}
-	if uu.mutation.EncounterCleared() {
+	if uu.mutation.GamesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.EncounterTable,
-			Columns: []string{user.EncounterColumn},
+			Table:   user.GamesTable,
+			Columns: []string{user.GamesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(encounter.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedEncounterIDs(); len(nodes) > 0 && !uu.mutation.EncounterCleared() {
+	if nodes := uu.mutation.RemovedGamesIDs(); len(nodes) > 0 && !uu.mutation.GamesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.EncounterTable,
-			Columns: []string{user.EncounterColumn},
+			Table:   user.GamesTable,
+			Columns: []string{user.GamesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(encounter.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -204,15 +204,15 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.EncounterIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.GamesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.EncounterTable,
-			Columns: []string{user.EncounterColumn},
+			Table:   user.GamesTable,
+			Columns: []string{user.GamesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(encounter.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -282,19 +282,19 @@ func (uuo *UserUpdateOne) SetNillableVerified(b *bool) *UserUpdateOne {
 	return uuo
 }
 
-// AddEncounterIDs adds the "encounter" edge to the Encounter entity by IDs.
-func (uuo *UserUpdateOne) AddEncounterIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.AddEncounterIDs(ids...)
+// AddGameIDs adds the "games" edge to the Game entity by IDs.
+func (uuo *UserUpdateOne) AddGameIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddGameIDs(ids...)
 	return uuo
 }
 
-// AddEncounter adds the "encounter" edges to the Encounter entity.
-func (uuo *UserUpdateOne) AddEncounter(e ...*Encounter) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
+// AddGames adds the "games" edges to the Game entity.
+func (uuo *UserUpdateOne) AddGames(g ...*Game) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
 	}
-	return uuo.AddEncounterIDs(ids...)
+	return uuo.AddGameIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -302,25 +302,25 @@ func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
 }
 
-// ClearEncounter clears all "encounter" edges to the Encounter entity.
-func (uuo *UserUpdateOne) ClearEncounter() *UserUpdateOne {
-	uuo.mutation.ClearEncounter()
+// ClearGames clears all "games" edges to the Game entity.
+func (uuo *UserUpdateOne) ClearGames() *UserUpdateOne {
+	uuo.mutation.ClearGames()
 	return uuo
 }
 
-// RemoveEncounterIDs removes the "encounter" edge to Encounter entities by IDs.
-func (uuo *UserUpdateOne) RemoveEncounterIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.RemoveEncounterIDs(ids...)
+// RemoveGameIDs removes the "games" edge to Game entities by IDs.
+func (uuo *UserUpdateOne) RemoveGameIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveGameIDs(ids...)
 	return uuo
 }
 
-// RemoveEncounter removes "encounter" edges to Encounter entities.
-func (uuo *UserUpdateOne) RemoveEncounter(e ...*Encounter) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
+// RemoveGames removes "games" edges to Game entities.
+func (uuo *UserUpdateOne) RemoveGames(g ...*Game) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
 	}
-	return uuo.RemoveEncounterIDs(ids...)
+	return uuo.RemoveGameIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -416,28 +416,28 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if value, ok := uuo.mutation.Verified(); ok {
 		_spec.SetField(user.FieldVerified, field.TypeBool, value)
 	}
-	if uuo.mutation.EncounterCleared() {
+	if uuo.mutation.GamesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.EncounterTable,
-			Columns: []string{user.EncounterColumn},
+			Table:   user.GamesTable,
+			Columns: []string{user.GamesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(encounter.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedEncounterIDs(); len(nodes) > 0 && !uuo.mutation.EncounterCleared() {
+	if nodes := uuo.mutation.RemovedGamesIDs(); len(nodes) > 0 && !uuo.mutation.GamesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.EncounterTable,
-			Columns: []string{user.EncounterColumn},
+			Table:   user.GamesTable,
+			Columns: []string{user.GamesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(encounter.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -445,15 +445,15 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.EncounterIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.GamesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.EncounterTable,
-			Columns: []string{user.EncounterColumn},
+			Table:   user.GamesTable,
+			Columns: []string{user.GamesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(encounter.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(game.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -9,6 +9,8 @@ import (
 	"gm-tool-backend/ent/difficulty"
 	"gm-tool-backend/ent/encounterdifficultythreshold"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -19,6 +21,7 @@ type EncounterDifficultyThresholdCreate struct {
 	config
 	mutation *EncounterDifficultyThresholdMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetPlayerLevel sets the "player_level" field.
@@ -156,6 +159,7 @@ func (edtc *EncounterDifficultyThresholdCreate) createSpec() (*EncounterDifficul
 		_node = &EncounterDifficultyThreshold{config: edtc.config}
 		_spec = sqlgraph.NewCreateSpec(encounterdifficultythreshold.Table, sqlgraph.NewFieldSpec(encounterdifficultythreshold.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = edtc.conflict
 	if id, ok := edtc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -188,11 +192,225 @@ func (edtc *EncounterDifficultyThresholdCreate) createSpec() (*EncounterDifficul
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.EncounterDifficultyThreshold.Create().
+//		SetPlayerLevel(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.EncounterDifficultyThresholdUpsert) {
+//			SetPlayerLevel(v+v).
+//		}).
+//		Exec(ctx)
+func (edtc *EncounterDifficultyThresholdCreate) OnConflict(opts ...sql.ConflictOption) *EncounterDifficultyThresholdUpsertOne {
+	edtc.conflict = opts
+	return &EncounterDifficultyThresholdUpsertOne{
+		create: edtc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.EncounterDifficultyThreshold.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (edtc *EncounterDifficultyThresholdCreate) OnConflictColumns(columns ...string) *EncounterDifficultyThresholdUpsertOne {
+	edtc.conflict = append(edtc.conflict, sql.ConflictColumns(columns...))
+	return &EncounterDifficultyThresholdUpsertOne{
+		create: edtc,
+	}
+}
+
+type (
+	// EncounterDifficultyThresholdUpsertOne is the builder for "upsert"-ing
+	//  one EncounterDifficultyThreshold node.
+	EncounterDifficultyThresholdUpsertOne struct {
+		create *EncounterDifficultyThresholdCreate
+	}
+
+	// EncounterDifficultyThresholdUpsert is the "OnConflict" setter.
+	EncounterDifficultyThresholdUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetPlayerLevel sets the "player_level" field.
+func (u *EncounterDifficultyThresholdUpsert) SetPlayerLevel(v int) *EncounterDifficultyThresholdUpsert {
+	u.Set(encounterdifficultythreshold.FieldPlayerLevel, v)
+	return u
+}
+
+// UpdatePlayerLevel sets the "player_level" field to the value that was provided on create.
+func (u *EncounterDifficultyThresholdUpsert) UpdatePlayerLevel() *EncounterDifficultyThresholdUpsert {
+	u.SetExcluded(encounterdifficultythreshold.FieldPlayerLevel)
+	return u
+}
+
+// AddPlayerLevel adds v to the "player_level" field.
+func (u *EncounterDifficultyThresholdUpsert) AddPlayerLevel(v int) *EncounterDifficultyThresholdUpsert {
+	u.Add(encounterdifficultythreshold.FieldPlayerLevel, v)
+	return u
+}
+
+// SetExp sets the "exp" field.
+func (u *EncounterDifficultyThresholdUpsert) SetExp(v int64) *EncounterDifficultyThresholdUpsert {
+	u.Set(encounterdifficultythreshold.FieldExp, v)
+	return u
+}
+
+// UpdateExp sets the "exp" field to the value that was provided on create.
+func (u *EncounterDifficultyThresholdUpsert) UpdateExp() *EncounterDifficultyThresholdUpsert {
+	u.SetExcluded(encounterdifficultythreshold.FieldExp)
+	return u
+}
+
+// AddExp adds v to the "exp" field.
+func (u *EncounterDifficultyThresholdUpsert) AddExp(v int64) *EncounterDifficultyThresholdUpsert {
+	u.Add(encounterdifficultythreshold.FieldExp, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.EncounterDifficultyThreshold.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(encounterdifficultythreshold.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *EncounterDifficultyThresholdUpsertOne) UpdateNewValues() *EncounterDifficultyThresholdUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(encounterdifficultythreshold.FieldID)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.EncounterDifficultyThreshold.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *EncounterDifficultyThresholdUpsertOne) Ignore() *EncounterDifficultyThresholdUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *EncounterDifficultyThresholdUpsertOne) DoNothing() *EncounterDifficultyThresholdUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the EncounterDifficultyThresholdCreate.OnConflict
+// documentation for more info.
+func (u *EncounterDifficultyThresholdUpsertOne) Update(set func(*EncounterDifficultyThresholdUpsert)) *EncounterDifficultyThresholdUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&EncounterDifficultyThresholdUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetPlayerLevel sets the "player_level" field.
+func (u *EncounterDifficultyThresholdUpsertOne) SetPlayerLevel(v int) *EncounterDifficultyThresholdUpsertOne {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.SetPlayerLevel(v)
+	})
+}
+
+// AddPlayerLevel adds v to the "player_level" field.
+func (u *EncounterDifficultyThresholdUpsertOne) AddPlayerLevel(v int) *EncounterDifficultyThresholdUpsertOne {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.AddPlayerLevel(v)
+	})
+}
+
+// UpdatePlayerLevel sets the "player_level" field to the value that was provided on create.
+func (u *EncounterDifficultyThresholdUpsertOne) UpdatePlayerLevel() *EncounterDifficultyThresholdUpsertOne {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.UpdatePlayerLevel()
+	})
+}
+
+// SetExp sets the "exp" field.
+func (u *EncounterDifficultyThresholdUpsertOne) SetExp(v int64) *EncounterDifficultyThresholdUpsertOne {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.SetExp(v)
+	})
+}
+
+// AddExp adds v to the "exp" field.
+func (u *EncounterDifficultyThresholdUpsertOne) AddExp(v int64) *EncounterDifficultyThresholdUpsertOne {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.AddExp(v)
+	})
+}
+
+// UpdateExp sets the "exp" field to the value that was provided on create.
+func (u *EncounterDifficultyThresholdUpsertOne) UpdateExp() *EncounterDifficultyThresholdUpsertOne {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.UpdateExp()
+	})
+}
+
+// Exec executes the query.
+func (u *EncounterDifficultyThresholdUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for EncounterDifficultyThresholdCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *EncounterDifficultyThresholdUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *EncounterDifficultyThresholdUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: EncounterDifficultyThresholdUpsertOne.ID is not supported by MySQL driver. Use EncounterDifficultyThresholdUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *EncounterDifficultyThresholdUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // EncounterDifficultyThresholdCreateBulk is the builder for creating many EncounterDifficultyThreshold entities in bulk.
 type EncounterDifficultyThresholdCreateBulk struct {
 	config
 	err      error
 	builders []*EncounterDifficultyThresholdCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the EncounterDifficultyThreshold entities in the database.
@@ -222,6 +440,7 @@ func (edtcb *EncounterDifficultyThresholdCreateBulk) Save(ctx context.Context) (
 					_, err = mutators[i+1].Mutate(root, edtcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = edtcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, edtcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -268,6 +487,162 @@ func (edtcb *EncounterDifficultyThresholdCreateBulk) Exec(ctx context.Context) e
 // ExecX is like Exec, but panics if an error occurs.
 func (edtcb *EncounterDifficultyThresholdCreateBulk) ExecX(ctx context.Context) {
 	if err := edtcb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.EncounterDifficultyThreshold.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.EncounterDifficultyThresholdUpsert) {
+//			SetPlayerLevel(v+v).
+//		}).
+//		Exec(ctx)
+func (edtcb *EncounterDifficultyThresholdCreateBulk) OnConflict(opts ...sql.ConflictOption) *EncounterDifficultyThresholdUpsertBulk {
+	edtcb.conflict = opts
+	return &EncounterDifficultyThresholdUpsertBulk{
+		create: edtcb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.EncounterDifficultyThreshold.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (edtcb *EncounterDifficultyThresholdCreateBulk) OnConflictColumns(columns ...string) *EncounterDifficultyThresholdUpsertBulk {
+	edtcb.conflict = append(edtcb.conflict, sql.ConflictColumns(columns...))
+	return &EncounterDifficultyThresholdUpsertBulk{
+		create: edtcb,
+	}
+}
+
+// EncounterDifficultyThresholdUpsertBulk is the builder for "upsert"-ing
+// a bulk of EncounterDifficultyThreshold nodes.
+type EncounterDifficultyThresholdUpsertBulk struct {
+	create *EncounterDifficultyThresholdCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.EncounterDifficultyThreshold.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(encounterdifficultythreshold.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *EncounterDifficultyThresholdUpsertBulk) UpdateNewValues() *EncounterDifficultyThresholdUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(encounterdifficultythreshold.FieldID)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.EncounterDifficultyThreshold.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *EncounterDifficultyThresholdUpsertBulk) Ignore() *EncounterDifficultyThresholdUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *EncounterDifficultyThresholdUpsertBulk) DoNothing() *EncounterDifficultyThresholdUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the EncounterDifficultyThresholdCreateBulk.OnConflict
+// documentation for more info.
+func (u *EncounterDifficultyThresholdUpsertBulk) Update(set func(*EncounterDifficultyThresholdUpsert)) *EncounterDifficultyThresholdUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&EncounterDifficultyThresholdUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetPlayerLevel sets the "player_level" field.
+func (u *EncounterDifficultyThresholdUpsertBulk) SetPlayerLevel(v int) *EncounterDifficultyThresholdUpsertBulk {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.SetPlayerLevel(v)
+	})
+}
+
+// AddPlayerLevel adds v to the "player_level" field.
+func (u *EncounterDifficultyThresholdUpsertBulk) AddPlayerLevel(v int) *EncounterDifficultyThresholdUpsertBulk {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.AddPlayerLevel(v)
+	})
+}
+
+// UpdatePlayerLevel sets the "player_level" field to the value that was provided on create.
+func (u *EncounterDifficultyThresholdUpsertBulk) UpdatePlayerLevel() *EncounterDifficultyThresholdUpsertBulk {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.UpdatePlayerLevel()
+	})
+}
+
+// SetExp sets the "exp" field.
+func (u *EncounterDifficultyThresholdUpsertBulk) SetExp(v int64) *EncounterDifficultyThresholdUpsertBulk {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.SetExp(v)
+	})
+}
+
+// AddExp adds v to the "exp" field.
+func (u *EncounterDifficultyThresholdUpsertBulk) AddExp(v int64) *EncounterDifficultyThresholdUpsertBulk {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.AddExp(v)
+	})
+}
+
+// UpdateExp sets the "exp" field to the value that was provided on create.
+func (u *EncounterDifficultyThresholdUpsertBulk) UpdateExp() *EncounterDifficultyThresholdUpsertBulk {
+	return u.Update(func(s *EncounterDifficultyThresholdUpsert) {
+		s.UpdateExp()
+	})
+}
+
+// Exec executes the query.
+func (u *EncounterDifficultyThresholdUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the EncounterDifficultyThresholdCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for EncounterDifficultyThresholdCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *EncounterDifficultyThresholdUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

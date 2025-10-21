@@ -15,12 +15,25 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldUserID holds the string denoting the user_id field in the database.
-	FieldUserID = "user_id"
+	// FieldGameID holds the string denoting the game_id field in the database.
+	FieldGameID = "game_id"
+	// FieldExternalID holds the string denoting the external_id field in the database.
+	FieldExternalID = "external_id"
+	// FieldState holds the string denoting the state field in the database.
+	FieldState = "state"
+	// EdgeGame holds the string denoting the game edge name in mutations.
+	EdgeGame = "game"
 	// EdgeEncounterCombatants holds the string denoting the encounter_combatants edge name in mutations.
 	EdgeEncounterCombatants = "encounter_combatants"
 	// Table holds the table name of the encounter in the database.
 	Table = "encounters"
+	// GameTable is the table that holds the game relation/edge.
+	GameTable = "encounters"
+	// GameInverseTable is the table name for the Game entity.
+	// It exists in this package in order to avoid circular dependency with the "game" package.
+	GameInverseTable = "games"
+	// GameColumn is the table column denoting the game relation/edge.
+	GameColumn = "game_id"
 	// EncounterCombatantsTable is the table that holds the encounter_combatants relation/edge.
 	EncounterCombatantsTable = "encounter_combatants"
 	// EncounterCombatantsInverseTable is the table name for the EncounterCombatant entity.
@@ -34,13 +47,9 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldName,
-	FieldUserID,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "encounters"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"user_encounter",
+	FieldGameID,
+	FieldExternalID,
+	FieldState,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -50,17 +59,10 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
-			return true
-		}
-	}
 	return false
 }
 
 var (
-	// NameValidator is a validator for the "name" field. It is called by the builders before save.
-	NameValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -78,9 +80,21 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
-// ByUserID orders the results by the user_id field.
-func ByUserID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+// ByGameID orders the results by the game_id field.
+func ByGameID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGameID, opts...).ToFunc()
+}
+
+// ByExternalID orders the results by the external_id field.
+func ByExternalID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExternalID, opts...).ToFunc()
+}
+
+// ByGameField orders the results by game field.
+func ByGameField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGameStep(), sql.OrderByField(field, opts...))
+	}
 }
 
 // ByEncounterCombatantsCount orders the results by encounter_combatants count.
@@ -95,6 +109,13 @@ func ByEncounterCombatants(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpti
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newEncounterCombatantsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
+}
+func newGameStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GameInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, GameTable, GameColumn),
+	)
 }
 func newEncounterCombatantsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

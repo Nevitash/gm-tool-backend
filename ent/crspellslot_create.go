@@ -9,6 +9,8 @@ import (
 	"gm-tool-backend/ent/challangerating"
 	"gm-tool-backend/ent/crspellslot"
 
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -19,6 +21,7 @@ type CrSpellSlotCreate struct {
 	config
 	mutation *CrSpellSlotMutation
 	hooks    []Hook
+	conflict []sql.ConflictOption
 }
 
 // SetLevel sets the "level" field.
@@ -156,6 +159,7 @@ func (cssc *CrSpellSlotCreate) createSpec() (*CrSpellSlot, *sqlgraph.CreateSpec)
 		_node = &CrSpellSlot{config: cssc.config}
 		_spec = sqlgraph.NewCreateSpec(crspellslot.Table, sqlgraph.NewFieldSpec(crspellslot.FieldID, field.TypeUUID))
 	)
+	_spec.OnConflict = cssc.conflict
 	if id, ok := cssc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -188,11 +192,189 @@ func (cssc *CrSpellSlotCreate) createSpec() (*CrSpellSlot, *sqlgraph.CreateSpec)
 	return _node, _spec
 }
 
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.CrSpellSlot.Create().
+//		SetLevel(v).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CrSpellSlotUpsert) {
+//			SetLevel(v+v).
+//		}).
+//		Exec(ctx)
+func (cssc *CrSpellSlotCreate) OnConflict(opts ...sql.ConflictOption) *CrSpellSlotUpsertOne {
+	cssc.conflict = opts
+	return &CrSpellSlotUpsertOne{
+		create: cssc,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.CrSpellSlot.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (cssc *CrSpellSlotCreate) OnConflictColumns(columns ...string) *CrSpellSlotUpsertOne {
+	cssc.conflict = append(cssc.conflict, sql.ConflictColumns(columns...))
+	return &CrSpellSlotUpsertOne{
+		create: cssc,
+	}
+}
+
+type (
+	// CrSpellSlotUpsertOne is the builder for "upsert"-ing
+	//  one CrSpellSlot node.
+	CrSpellSlotUpsertOne struct {
+		create *CrSpellSlotCreate
+	}
+
+	// CrSpellSlotUpsert is the "OnConflict" setter.
+	CrSpellSlotUpsert struct {
+		*sql.UpdateSet
+	}
+)
+
+// SetAmount sets the "amount" field.
+func (u *CrSpellSlotUpsert) SetAmount(v int) *CrSpellSlotUpsert {
+	u.Set(crspellslot.FieldAmount, v)
+	return u
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *CrSpellSlotUpsert) UpdateAmount() *CrSpellSlotUpsert {
+	u.SetExcluded(crspellslot.FieldAmount)
+	return u
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *CrSpellSlotUpsert) AddAmount(v int) *CrSpellSlotUpsert {
+	u.Add(crspellslot.FieldAmount, v)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
+// Using this option is equivalent to using:
+//
+//	client.CrSpellSlot.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(crspellslot.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CrSpellSlotUpsertOne) UpdateNewValues() *CrSpellSlotUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(crspellslot.FieldID)
+		}
+		if _, exists := u.create.mutation.Level(); exists {
+			s.SetIgnore(crspellslot.FieldLevel)
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.CrSpellSlot.Create().
+//	    OnConflict(sql.ResolveWithIgnore()).
+//	    Exec(ctx)
+func (u *CrSpellSlotUpsertOne) Ignore() *CrSpellSlotUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CrSpellSlotUpsertOne) DoNothing() *CrSpellSlotUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CrSpellSlotCreate.OnConflict
+// documentation for more info.
+func (u *CrSpellSlotUpsertOne) Update(set func(*CrSpellSlotUpsert)) *CrSpellSlotUpsertOne {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CrSpellSlotUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAmount sets the "amount" field.
+func (u *CrSpellSlotUpsertOne) SetAmount(v int) *CrSpellSlotUpsertOne {
+	return u.Update(func(s *CrSpellSlotUpsert) {
+		s.SetAmount(v)
+	})
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *CrSpellSlotUpsertOne) AddAmount(v int) *CrSpellSlotUpsertOne {
+	return u.Update(func(s *CrSpellSlotUpsert) {
+		s.AddAmount(v)
+	})
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *CrSpellSlotUpsertOne) UpdateAmount() *CrSpellSlotUpsertOne {
+	return u.Update(func(s *CrSpellSlotUpsert) {
+		s.UpdateAmount()
+	})
+}
+
+// Exec executes the query.
+func (u *CrSpellSlotUpsertOne) Exec(ctx context.Context) error {
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CrSpellSlotCreate.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CrSpellSlotUpsertOne) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// Exec executes the UPSERT query and returns the inserted/updated ID.
+func (u *CrSpellSlotUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: CrSpellSlotUpsertOne.ID is not supported by MySQL driver. Use CrSpellSlotUpsertOne.Exec instead")
+	}
+	node, err := u.create.Save(ctx)
+	if err != nil {
+		return id, err
+	}
+	return node.ID, nil
+}
+
+// IDX is like ID, but panics if an error occurs.
+func (u *CrSpellSlotUpsertOne) IDX(ctx context.Context) uuid.UUID {
+	id, err := u.ID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // CrSpellSlotCreateBulk is the builder for creating many CrSpellSlot entities in bulk.
 type CrSpellSlotCreateBulk struct {
 	config
 	err      error
 	builders []*CrSpellSlotCreate
+	conflict []sql.ConflictOption
 }
 
 // Save creates the CrSpellSlot entities in the database.
@@ -222,6 +404,7 @@ func (csscb *CrSpellSlotCreateBulk) Save(ctx context.Context) ([]*CrSpellSlot, e
 					_, err = mutators[i+1].Mutate(root, csscb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
+					spec.OnConflict = csscb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, csscb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -268,6 +451,144 @@ func (csscb *CrSpellSlotCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (csscb *CrSpellSlotCreateBulk) ExecX(ctx context.Context) {
 	if err := csscb.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
+// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
+// of the `INSERT` statement. For example:
+//
+//	client.CrSpellSlot.CreateBulk(builders...).
+//		OnConflict(
+//			// Update the row with the new values
+//			// the was proposed for insertion.
+//			sql.ResolveWithNewValues(),
+//		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.CrSpellSlotUpsert) {
+//			SetLevel(v+v).
+//		}).
+//		Exec(ctx)
+func (csscb *CrSpellSlotCreateBulk) OnConflict(opts ...sql.ConflictOption) *CrSpellSlotUpsertBulk {
+	csscb.conflict = opts
+	return &CrSpellSlotUpsertBulk{
+		create: csscb,
+	}
+}
+
+// OnConflictColumns calls `OnConflict` and configures the columns
+// as conflict target. Using this option is equivalent to using:
+//
+//	client.CrSpellSlot.Create().
+//		OnConflict(sql.ConflictColumns(columns...)).
+//		Exec(ctx)
+func (csscb *CrSpellSlotCreateBulk) OnConflictColumns(columns ...string) *CrSpellSlotUpsertBulk {
+	csscb.conflict = append(csscb.conflict, sql.ConflictColumns(columns...))
+	return &CrSpellSlotUpsertBulk{
+		create: csscb,
+	}
+}
+
+// CrSpellSlotUpsertBulk is the builder for "upsert"-ing
+// a bulk of CrSpellSlot nodes.
+type CrSpellSlotUpsertBulk struct {
+	create *CrSpellSlotCreateBulk
+}
+
+// UpdateNewValues updates the mutable fields using the new values that
+// were set on create. Using this option is equivalent to using:
+//
+//	client.CrSpellSlot.Create().
+//		OnConflict(
+//			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(crspellslot.FieldID)
+//			}),
+//		).
+//		Exec(ctx)
+func (u *CrSpellSlotUpsertBulk) UpdateNewValues() *CrSpellSlotUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(crspellslot.FieldID)
+			}
+			if _, exists := b.mutation.Level(); exists {
+				s.SetIgnore(crspellslot.FieldLevel)
+			}
+		}
+	}))
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+// Using this option is equivalent to using:
+//
+//	client.CrSpellSlot.Create().
+//		OnConflict(sql.ResolveWithIgnore()).
+//		Exec(ctx)
+func (u *CrSpellSlotUpsertBulk) Ignore() *CrSpellSlotUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+// Supported only by SQLite and PostgreSQL.
+func (u *CrSpellSlotUpsertBulk) DoNothing() *CrSpellSlotUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.DoNothing())
+	return u
+}
+
+// Update allows overriding fields `UPDATE` values. See the CrSpellSlotCreateBulk.OnConflict
+// documentation for more info.
+func (u *CrSpellSlotUpsertBulk) Update(set func(*CrSpellSlotUpsert)) *CrSpellSlotUpsertBulk {
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
+		set(&CrSpellSlotUpsert{UpdateSet: update})
+	}))
+	return u
+}
+
+// SetAmount sets the "amount" field.
+func (u *CrSpellSlotUpsertBulk) SetAmount(v int) *CrSpellSlotUpsertBulk {
+	return u.Update(func(s *CrSpellSlotUpsert) {
+		s.SetAmount(v)
+	})
+}
+
+// AddAmount adds v to the "amount" field.
+func (u *CrSpellSlotUpsertBulk) AddAmount(v int) *CrSpellSlotUpsertBulk {
+	return u.Update(func(s *CrSpellSlotUpsert) {
+		s.AddAmount(v)
+	})
+}
+
+// UpdateAmount sets the "amount" field to the value that was provided on create.
+func (u *CrSpellSlotUpsertBulk) UpdateAmount() *CrSpellSlotUpsertBulk {
+	return u.Update(func(s *CrSpellSlotUpsert) {
+		s.UpdateAmount()
+	})
+}
+
+// Exec executes the query.
+func (u *CrSpellSlotUpsertBulk) Exec(ctx context.Context) error {
+	if u.create.err != nil {
+		return u.create.err
+	}
+	for i, b := range u.create.builders {
+		if len(b.conflict) != 0 {
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the CrSpellSlotCreateBulk instead", i)
+		}
+	}
+	if len(u.create.conflict) == 0 {
+		return errors.New("ent: missing options for CrSpellSlotCreateBulk.OnConflict")
+	}
+	return u.create.Exec(ctx)
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (u *CrSpellSlotUpsertBulk) ExecX(ctx context.Context) {
+	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

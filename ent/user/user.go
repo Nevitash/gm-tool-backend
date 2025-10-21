@@ -19,17 +19,17 @@ const (
 	FieldEmail = "email"
 	// FieldVerified holds the string denoting the verified field in the database.
 	FieldVerified = "verified"
-	// EdgeEncounter holds the string denoting the encounter edge name in mutations.
-	EdgeEncounter = "encounter"
+	// EdgeGames holds the string denoting the games edge name in mutations.
+	EdgeGames = "games"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// EncounterTable is the table that holds the encounter relation/edge.
-	EncounterTable = "encounters"
-	// EncounterInverseTable is the table name for the Encounter entity.
-	// It exists in this package in order to avoid circular dependency with the "encounter" package.
-	EncounterInverseTable = "encounters"
-	// EncounterColumn is the table column denoting the encounter relation/edge.
-	EncounterColumn = "user_encounter"
+	// GamesTable is the table that holds the games relation/edge.
+	GamesTable = "games"
+	// GamesInverseTable is the table name for the Game entity.
+	// It exists in this package in order to avoid circular dependency with the "game" package.
+	GamesInverseTable = "games"
+	// GamesColumn is the table column denoting the games relation/edge.
+	GamesColumn = "owner_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -40,10 +40,21 @@ var Columns = []string{
 	FieldVerified,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "users"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"game_players",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -84,23 +95,23 @@ func ByVerified(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVerified, opts...).ToFunc()
 }
 
-// ByEncounterCount orders the results by encounter count.
-func ByEncounterCount(opts ...sql.OrderTermOption) OrderOption {
+// ByGamesCount orders the results by games count.
+func ByGamesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newEncounterStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newGamesStep(), opts...)
 	}
 }
 
-// ByEncounter orders the results by encounter terms.
-func ByEncounter(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByGames orders the results by games terms.
+func ByGames(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newEncounterStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newGamesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newEncounterStep() *sqlgraph.Step {
+func newGamesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(EncounterInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, EncounterTable, EncounterColumn),
+		sqlgraph.To(GamesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GamesTable, GamesColumn),
 	)
 }

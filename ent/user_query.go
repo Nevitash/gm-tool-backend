@@ -6,7 +6,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
-	"gm-tool-backend/ent/encounter"
+	"gm-tool-backend/ent/game"
 	"gm-tool-backend/ent/predicate"
 	"gm-tool-backend/ent/user"
 	"math"
@@ -21,11 +21,12 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx           *QueryContext
-	order         []user.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.User
-	withEncounter *EncounterQuery
+	ctx        *QueryContext
+	order      []user.OrderOption
+	inters     []Interceptor
+	predicates []predicate.User
+	withGames  *GameQuery
+	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -62,9 +63,9 @@ func (uq *UserQuery) Order(o ...user.OrderOption) *UserQuery {
 	return uq
 }
 
-// QueryEncounter chains the current query on the "encounter" edge.
-func (uq *UserQuery) QueryEncounter() *EncounterQuery {
-	query := (&EncounterClient{config: uq.config}).Query()
+// QueryGames chains the current query on the "games" edge.
+func (uq *UserQuery) QueryGames() *GameQuery {
+	query := (&GameClient{config: uq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -75,8 +76,8 @@ func (uq *UserQuery) QueryEncounter() *EncounterQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(encounter.Table, encounter.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.EncounterTable, user.EncounterColumn),
+			sqlgraph.To(game.Table, game.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.GamesTable, user.GamesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -271,26 +272,26 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:        uq.config,
-		ctx:           uq.ctx.Clone(),
-		order:         append([]user.OrderOption{}, uq.order...),
-		inters:        append([]Interceptor{}, uq.inters...),
-		predicates:    append([]predicate.User{}, uq.predicates...),
-		withEncounter: uq.withEncounter.Clone(),
+		config:     uq.config,
+		ctx:        uq.ctx.Clone(),
+		order:      append([]user.OrderOption{}, uq.order...),
+		inters:     append([]Interceptor{}, uq.inters...),
+		predicates: append([]predicate.User{}, uq.predicates...),
+		withGames:  uq.withGames.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
 	}
 }
 
-// WithEncounter tells the query-builder to eager-load the nodes that are connected to
-// the "encounter" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithEncounter(opts ...func(*EncounterQuery)) *UserQuery {
-	query := (&EncounterClient{config: uq.config}).Query()
+// WithGames tells the query-builder to eager-load the nodes that are connected to
+// the "games" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithGames(opts ...func(*GameQuery)) *UserQuery {
+	query := (&GameClient{config: uq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withEncounter = query
+	uq.withGames = query
 	return uq
 }
 
@@ -371,11 +372,15 @@ func (uq *UserQuery) prepareQuery(ctx context.Context) error {
 func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, error) {
 	var (
 		nodes       = []*User{}
+		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
 		loadedTypes = [1]bool{
-			uq.withEncounter != nil,
+			uq.withGames != nil,
 		}
 	)
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, user.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*User).scanValues(nil, columns)
 	}
@@ -394,17 +399,17 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := uq.withEncounter; query != nil {
-		if err := uq.loadEncounter(ctx, query, nodes,
-			func(n *User) { n.Edges.Encounter = []*Encounter{} },
-			func(n *User, e *Encounter) { n.Edges.Encounter = append(n.Edges.Encounter, e) }); err != nil {
+	if query := uq.withGames; query != nil {
+		if err := uq.loadGames(ctx, query, nodes,
+			func(n *User) { n.Edges.Games = []*Game{} },
+			func(n *User, e *Game) { n.Edges.Games = append(n.Edges.Games, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (uq *UserQuery) loadEncounter(ctx context.Context, query *EncounterQuery, nodes []*User, init func(*User), assign func(*User, *Encounter)) error {
+func (uq *UserQuery) loadGames(ctx context.Context, query *GameQuery, nodes []*User, init func(*User), assign func(*User, *Game)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
 	for i := range nodes {
@@ -414,22 +419,21 @@ func (uq *UserQuery) loadEncounter(ctx context.Context, query *EncounterQuery, n
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
-	query.Where(predicate.Encounter(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(user.EncounterColumn), fks...))
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(game.FieldOwnerID)
+	}
+	query.Where(predicate.Game(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.GamesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_encounter
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_encounter" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.OwnerID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_encounter" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "owner_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
