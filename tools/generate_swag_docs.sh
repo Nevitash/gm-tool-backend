@@ -1,0 +1,1 @@
+swag init --dir ./cmd,./ent,./internal
