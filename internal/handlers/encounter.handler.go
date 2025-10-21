@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"gm-tool-backend/ent"
 	"gm-tool-backend/ent/encounter"
+	"gm-tool-backend/internal/database"
+	appErrors "gm-tool-backend/internal/errors"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -23,28 +26,8 @@ func GetEncounters(client *ent.Client) echo.HandlerFunc {
 
 // CreateEncounter creates a new encounter
 func CreateEncounter(client *ent.Client) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		var req struct {
-			Name   string    `json:"name" validate:"required"`
-			UserID uuid.UUID `json:"user_id" validate:"required"`
-		}
-
-		if err := c.Bind(&req); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request body"})
-		}
-
-		encounter, err := client.Encounter.
-			Create().
-			SetName(req.Name).
-			SetUserID(req.UserID).
-			Save(c.Request().Context())
-
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		return c.JSON(http.StatusCreated, encounter)
-	}
+	//TODO
+	return nil
 }
 
 // GetEncounter returns a specific encounter by ID
@@ -74,40 +57,7 @@ func GetEncounter(client *ent.Client) echo.HandlerFunc {
 
 // UpdateEncounter updates an existing encounter
 func UpdateEncounter(client *ent.Client) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		id, err := uuid.Parse(c.Param("id"))
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid encounter ID"})
-		}
-
-		var req struct {
-			Name   string    `json:"name"`
-			UserID uuid.UUID `json:"user_id"`
-		}
-
-		if err := c.Bind(&req); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request body"})
-		}
-
-		updateQuery := client.Encounter.UpdateOneID(id)
-
-		if req.Name != "" {
-			updateQuery = updateQuery.SetName(req.Name)
-		}
-		if req.UserID != uuid.Nil {
-			updateQuery = updateQuery.SetUserID(req.UserID)
-		}
-
-		encounter, err := updateQuery.Save(c.Request().Context())
-		if err != nil {
-			if ent.IsNotFound(err) {
-				return c.JSON(http.StatusNotFound, map[string]string{"error": "Encounter not found"})
-			}
-			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-
-		return c.JSON(http.StatusOK, encounter)
-	}
+	return nil
 }
 
 // DeleteEncounter deletes an encounter
@@ -156,4 +106,17 @@ func GetEncounterCombatants(client *ent.Client) echo.HandlerFunc {
 
 		return c.JSON(http.StatusOK, encounter.Edges.EncounterCombatants)
 	}
+}
+
+func PostEncounter(c echo.Context) error {
+	gameId := c.Param("gameId")
+	gameUuid, err := uuid.Parse(gameId)
+	if err != nil {
+		return fmt.Errorf("invalid game id format: %w", err)
+	}
+	game, err := database.GetGameWithId(gameUuid)
+	if err != nil && appErrors.IsNoGameFound(err) {
+		return c.String(http.StatusNotFound, "No game found")
+	}
+	return c.JSON(http.StatusCreated, game.ID)
 }
