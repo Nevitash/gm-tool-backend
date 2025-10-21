@@ -12,7 +12,7 @@ type NoRecoommendedStatsForCr struct {
 }
 
 func (e *NoRecoommendedStatsForCr) Error() string {
-	return fmt.Sprintf("No recommended stats were found for %w. (%v)", e.Cr, e.Wrap)
+	return fmt.Sprintf("No recommended stats were found for %v. (%v)", e.Cr, e.Wrap)
 }
 
 func (e *NoRecoommendedStatsForCr) Unwrap() error {
@@ -34,7 +34,7 @@ type NoRecoommendedSpellSlotsForCr struct {
 }
 
 func (e *NoRecoommendedSpellSlotsForCr) Error() string {
-	return fmt.Sprintf("No recommended spell slots were found for %w. (%v)", e.Cr, e.Wrap)
+	return fmt.Sprintf("No recommended spell slots were found for %v. (%v)", e.Cr, e.Wrap)
 }
 
 func (e *NoRecoommendedSpellSlotsForCr) Unwrap() error {
