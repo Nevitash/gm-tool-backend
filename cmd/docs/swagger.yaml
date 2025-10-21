@@ -1,0 +1,9 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: These endpoints can help you game master for dnd5e (atm)
+  title: Backend for a gm toolkit
+  version: 1.0.0
+paths: {}
+swagger: "2.0"

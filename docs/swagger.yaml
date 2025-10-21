@@ -71,15 +71,22 @@ definitions:
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the EncounterQuery when eager-loading is set.
+      external_id:
+        description: ExternalID holds the value of the "external_id" field.
+        type: string
+      game_id:
+        description: GameID holds the value of the "game_id" field.
+        type: string
       id:
         description: ID of the ent.
         type: string
       name:
         description: Name holds the value of the "name" field.
         type: string
-      user_id:
-        description: ID of the user who owns this encounter
-        type: string
+      state:
+        allOf:
+        - $ref: '#/definitions/models.EncounterState'
+        description: State holds the value of the "state" field.
     type: object
   ent.EncounterCombatant:
     properties:
@@ -127,6 +134,45 @@ definitions:
         items:
           $ref: '#/definitions/ent.EncounterCombatant'
         type: array
+      game:
+        allOf:
+        - $ref: '#/definitions/ent.Game'
+        description: Game holds the value of the game edge.
+    type: object
+  ent.Game:
+    properties:
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.GameEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the GameQuery when eager-loading is set.
+      id:
+        description: ID of the ent.
+        type: string
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+      owner_id:
+        description: ID of the user who owns this game
+        type: string
+    type: object
+  ent.GameEdges:
+    properties:
+      encounters:
+        description: Encounters holds the value of the encounters edge.
+        items:
+          $ref: '#/definitions/ent.Encounter'
+        type: array
+      players:
+        description: Players holds the value of the players edge.
+        items:
+          $ref: '#/definitions/ent.User'
+        type: array
+      user:
+        allOf:
+        - $ref: '#/definitions/ent.User'
+        description: User holds the value of the user edge.
     type: object
   ent.User:
     properties:
@@ -151,11 +197,71 @@ definitions:
     type: object
   ent.UserEdges:
     properties:
-      encounter:
-        description: Encounter holds the value of the encounter edge.
+      games:
+        description: Games holds the value of the games edge.
         items:
-          $ref: '#/definitions/ent.Encounter'
+          $ref: '#/definitions/ent.Game'
         type: array
+    type: object
+  models.EncounterState:
+    properties:
+      id:
+        type: string
+      order:
+        items:
+          $ref: '#/definitions/models.InitiativeTrackerCombatant'
+        type: array
+    type: object
+  models.InitiativeTrackerCombatant:
+    properties:
+      ac:
+        type: string
+      active:
+        type: boolean
+      cr:
+        type: integer
+      current_ac:
+        type: integer
+      current_max:
+        type: integer
+      dirty_ac:
+        type: boolean
+      display:
+        type: string
+      enabled:
+        type: boolean
+      friendly:
+        type: boolean
+      hidden:
+        type: boolean
+      hp:
+        type: integer
+      id:
+        type: string
+      initiative:
+        type: integer
+      level:
+        type: integer
+      manualOrder:
+        type: integer
+      max:
+        type: integer
+      modifier:
+        type: integer
+      name:
+        type: string
+      note:
+        type: string
+      number:
+        type: integer
+      player:
+        type: boolean
+      status:
+        items:
+          type: string
+        type: array
+      temp:
+        type: integer
     type: object
   requests.CalculateEncounterCRsRequest:
     properties:
@@ -169,6 +275,11 @@ definitions:
         type: integer
       partySize:
         type: integer
+    type: object
+  requests.GameCreationRequest:
+    properties:
+      name:
+        type: string
     type: object
   requests.Monster:
     properties:
@@ -224,6 +335,36 @@ info:
   title: Backend for a gm toolkit
   version: 1.0.0
 paths:
+  /{userId}/game:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: The ID of the user creating the game
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Game name to be created
+        in: body
+        name: game
+        required: true
+        schema:
+          $ref: '#/definitions/requests.GameCreationRequest'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: UUID of the newly created game
+          schema:
+            type: string
+        "400":
+          description: Game could not be created
+          schema:
+            type: string
+      summary: Create a game for the given user id
+      tags:
+      - game
   /encounter-calculator:
     post:
       consumes:

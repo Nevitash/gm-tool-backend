@@ -173,6 +173,52 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/{userId}/game": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Create a game for the given user id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The ID of the user creating the game",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Game name to be created",
+                        "name": "game",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.GameCreationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "UUID of the newly created game",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Game could not be created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -271,6 +317,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "external_id": {
+                    "description": "ExternalID holds the value of the \"external_id\" field.",
+                    "type": "string"
+                },
+                "game_id": {
+                    "description": "GameID holds the value of the \"game_id\" field.",
+                    "type": "string"
+                },
                 "id": {
                     "description": "ID of the ent.",
                     "type": "string"
@@ -279,9 +333,13 @@ const docTemplate = `{
                     "description": "Name holds the value of the \"name\" field.",
                     "type": "string"
                 },
-                "user_id": {
-                    "description": "ID of the user who owns this encounter",
-                    "type": "string"
+                "state": {
+                    "description": "State holds the value of the \"state\" field.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.EncounterState"
+                        }
+                    ]
                 }
             }
         },
@@ -352,6 +410,66 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/ent.EncounterCombatant"
                     }
+                },
+                "game": {
+                    "description": "Game holds the value of the game edge.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.Game"
+                        }
+                    ]
+                }
+            }
+        },
+        "ent.Game": {
+            "type": "object",
+            "properties": {
+                "edges": {
+                    "description": "Edges holds the relations/edges for other nodes in the graph.\nThe values are being populated by the GameQuery when eager-loading is set.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.GameEdges"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "ID of the ent.",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name holds the value of the \"name\" field.",
+                    "type": "string"
+                },
+                "owner_id": {
+                    "description": "ID of the user who owns this game",
+                    "type": "string"
+                }
+            }
+        },
+        "ent.GameEdges": {
+            "type": "object",
+            "properties": {
+                "encounters": {
+                    "description": "Encounters holds the value of the encounters edge.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ent.Encounter"
+                    }
+                },
+                "players": {
+                    "description": "Players holds the value of the players edge.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ent.User"
+                    }
+                },
+                "user": {
+                    "description": "User holds the value of the user edge.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.User"
+                        }
+                    ]
                 }
             }
         },
@@ -387,12 +505,103 @@ const docTemplate = `{
         "ent.UserEdges": {
             "type": "object",
             "properties": {
-                "encounter": {
-                    "description": "Encounter holds the value of the encounter edge.",
+                "games": {
+                    "description": "Games holds the value of the games edge.",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ent.Encounter"
+                        "$ref": "#/definitions/ent.Game"
                     }
+                }
+            }
+        },
+        "models.EncounterState": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.InitiativeTrackerCombatant"
+                    }
+                }
+            }
+        },
+        "models.InitiativeTrackerCombatant": {
+            "type": "object",
+            "properties": {
+                "ac": {
+                    "type": "string"
+                },
+                "active": {
+                    "type": "boolean"
+                },
+                "cr": {
+                    "type": "integer"
+                },
+                "current_ac": {
+                    "type": "integer"
+                },
+                "current_max": {
+                    "type": "integer"
+                },
+                "dirty_ac": {
+                    "type": "boolean"
+                },
+                "display": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "friendly": {
+                    "type": "boolean"
+                },
+                "hidden": {
+                    "type": "boolean"
+                },
+                "hp": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "initiative": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "manualOrder": {
+                    "type": "integer"
+                },
+                "max": {
+                    "type": "integer"
+                },
+                "modifier": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "player": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "temp": {
+                    "type": "integer"
                 }
             }
         },
@@ -413,6 +622,14 @@ const docTemplate = `{
                 },
                 "partySize": {
                     "type": "integer"
+                }
+            }
+        },
+        "requests.GameCreationRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
                 }
             }
         },
