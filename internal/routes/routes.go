@@ -10,6 +10,8 @@ func SetupRoutes(echoInstance *echo.Echo) {
 	setupUserRoutes(echoInstance)
 	setupCrCalculatorRoutes(echoInstance)
 	setupInititiaveTrackerRoutes(echoInstance)
+	setupGameRoutes(echoInstance)
+	setupEncounterRoutes(echoInstance)
 }
 
 func setupInititiaveTrackerRoutes(echoInstance *echo.Echo) {
@@ -18,6 +20,14 @@ func setupInititiaveTrackerRoutes(echoInstance *echo.Echo) {
 
 func setupUserRoutes(echoInstance *echo.Echo) {
 	echoInstance.POST("/user", handlers.PostUser)
+}
+
+func setupEncounterRoutes(echoInstance *echo.Echo) {
+	echoInstance.POST("/:gameId/encounter", handlers.PostEncounter)
+}
+
+func setupGameRoutes(echoInstance *echo.Echo) {
+	echoInstance.POST("/:userId/game", handlers.PostGame)
 }
 
 func setupCrCalculatorRoutes(echoInstance *echo.Echo) {
