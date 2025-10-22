@@ -175,6 +175,44 @@ const docTemplate = `{
             }
         },
         "/{userId}/game": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "game"
+                ],
+                "summary": "Get all games for the given user id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The ID of the user whose games are being retrieved",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of games for the user",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ent.Game"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Could not retrieve games for user",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "consumes": [
                     "application/json"

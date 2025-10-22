@@ -28,6 +28,7 @@ func setupEncounterRoutes(echoInstance *echo.Echo) {
 
 func setupGameRoutes(echoInstance *echo.Echo) {
 	echoInstance.POST("/:userId/game", handlers.PostGame)
+	echoInstance.GET("/:userId/game", handlers.GetGames)
 }
 
 func setupCrCalculatorRoutes(echoInstance *echo.Echo) {

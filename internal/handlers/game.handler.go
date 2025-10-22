@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gm-tool-backend/internal/database"
 	"gm-tool-backend/internal/requests"
+	"gm-tool-backend/internal/responses"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -35,4 +36,29 @@ func PostGame(c echo.Context) error {
 		return c.String(http.StatusBadRequest, fmt.Sprintf("Game could not be created.\nerror: %v", err))
 	}
 	return c.JSON(http.StatusCreated, game.ID)
+}
+
+// @Summary Get all games for the given user id
+// @Tags game
+// @Accept json
+// @Produce json
+// @Param userId path string true "The ID of the user whose games are being retrieved"
+// @Success 200 {array} ent.Game "List of games for the user"
+// @Failure 400 {string} string "Could not retrieve games for user"
+// @Router /{userId}/game [get]
+func GetGames(c echo.Context) error {
+	userId := c.Param("userId")
+	userUuid, err := uuid.Parse(userId)
+	if err != nil {
+		return c.String(http.StatusBadRequest, fmt.Sprintf("invalid user id format.\nerror: %v", err))
+	}
+	games, err := database.GetGamesByUserId(userUuid)
+	if err != nil {
+		return c.String(http.StatusBadRequest, fmt.Sprintf("Could not retrieve games for user.\nerror: %v", err))
+	}
+	var gameResponses []responses.GameResponse
+	for _, game := range games {
+		gameResponses = append(gameResponses, *responses.NewGameResponse(game.ID.String(), game.Name))
+	}
+	return c.JSON(http.StatusOK, gameResponses)
 }

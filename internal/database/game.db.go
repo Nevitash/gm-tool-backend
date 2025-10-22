@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"gm-tool-backend/ent"
+	"gm-tool-backend/ent/game"
 	appErrors "gm-tool-backend/internal/errors"
 	"gm-tool-backend/internal/requests"
 
@@ -34,4 +35,16 @@ func CreateGame(request requests.GameCreationRequest, userUuid uuid.UUID) (*ent.
 		return nil, err
 	}
 	return game, nil
+}
+
+func GetGamesByUserId(userUuid uuid.UUID) ([]*ent.Game, error) {
+	dbClient, err := GetClient()
+	if err != nil {
+		return nil, err
+	}
+	games, err := dbClient.Game.Query().Where(game.OwnerIDEQ(userUuid)).All(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return games, nil
 }
