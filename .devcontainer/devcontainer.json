@@ -9,7 +9,8 @@
 		"vscode": {
 			"extensions": [
 				"anthropic.claude-code",
-				"kilocode.Kilo-Code"
+				"kilocode.Kilo-Code",
+				"redhat.vscode-yaml"
 			]
 		}
 	}

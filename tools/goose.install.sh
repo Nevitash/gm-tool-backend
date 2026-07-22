@@ -1,1 +1,2 @@
-go install github.com/pressly/goose/v3/cmd/goose@latest
+go get -tool github.com/pressly/goose/v3/cmd/goose@v3.26.0
+go tool goose up
