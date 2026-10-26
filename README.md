@@ -1,4 +1,4 @@
-﻿# GM-Tool Backend _(gm-tool-backend)_
+# GM-Tool Backend _(gm-tool-backend)_
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 
@@ -24,19 +24,19 @@ Virtual tabletops and GM companion screens need an efficient, structured server 
 
 Requires Go 1.24+:
 
-`ash
+```bash
 git clone https://github.com/Nevitash/gm-tool-backend.git
 cd gm-tool-backend
 go mod download
-`
+```
 
 ## Usage
 
 Start the backend API server:
 
-`ash
+```bash
 go run cmd/main.go
-`
+```
 
 The server starts on port 8080.
 
@@ -45,9 +45,9 @@ http://localhost:8080/swagger/index.html
 
 Run tests:
 
-`ash
+```bash
 go test ./...
-`
+```
 
 ## API
 
