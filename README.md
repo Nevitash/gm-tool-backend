@@ -1,62 +1,71 @@
-# Go REST API Backend
+﻿# GM-Tool Backend _(gm-tool-backend)_
 
-This project is a simple REST API backend built with Go, designed to be used with a React application. It provides endpoints for managing resources, specifically items.
+[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 
-## Project Structure
+Go REST API backend with Echo, Ent ORM, and Swagger documentation for Game Master tools.
 
-```
-go-rest-api-backend
-├── cmd
-│   └── main.go          # Entry point of the application
-├── internal
-│   ├── handlers
-│   │   └── handler.go   # HTTP request handlers
-│   ├── models
-│   │   └── model.go     # Data structures
-│   └── routes
-│       └── routes.go    # API routes setup
-├── go.mod                # Module definition
-├── go.sum                # Dependency checksums
-└── README.md             # Project documentation
-```
+GM-Tool Backend provides RESTful endpoints, encounter tracking, combatant calculation, and persistent database storage for game masters running tabletop roleplaying games.
 
-## Getting Started
+## Table of Contents
 
-### Prerequisites
+- [Background](#background)
+- [Install](#install)
+- [Usage](#usage)
+- [API](#api)
+- [Maintainers](#maintainers)
+- [Contributing](#contributing)
+- [License](#license)
 
-- Go 1.16 or later
-- A working Go environment
+## Background
 
-### Installation
+Virtual tabletops and GM companion screens need an efficient, structured server to handle real-time encounter math, monster stat lookup, and campaign persistence. GM-Tool Backend uses Go with the Echo web framework and Ent ORM to deliver fast, type-safe API operations backed by Swagger/OpenAPI documentation.
 
-1. Clone the repository:
+## Install
 
-   ```
-   git clone <repository-url>
-   cd go-rest-api-backend
-   ```
+Requires Go 1.24+:
 
-2. Install the dependencies:
+`ash
+git clone https://github.com/Nevitash/gm-tool-backend.git
+cd gm-tool-backend
+go mod download
+`
 
-   ```
-   go mod tidy
-   ```
+## Usage
 
-### Running the API
+Start the backend API server:
 
-To run the API, execute the following command:
-
-```
+`ash
 go run cmd/main.go
-```
+`
 
-The server will start on `localhost:8080` by default.
+The server starts on port 8080.
 
-### API Endpoints
+Interactive Swagger API documentation is available at:
+http://localhost:8080/swagger/index.html
 
-- `GET /items` - Retrieve a list of items
-- `POST /items` - Create a new item
+Run tests:
 
-### License
+`ash
+go test ./...
+`
 
-This project is licensed under the MIT License.
+## API
+
+Endpoints provided:
+
+- POST /api/v1/encounters/calculate - Calculate encounter challenge rating and difficulty
+- GET /api/v1/combatants - List tracked combatants
+- GET /api/v1/items - Search and fetch magic items
+- GET /swagger/* - Interactive Swagger UI and OpenAPI specifications
+
+## Maintainers
+
+[@Nevitash](https://github.com/Nevitash)
+
+## Contributing
+
+PRs accepted. Please open an issue first to discuss substantial endpoint additions or database schema updates.
+
+## License
+
+[MIT](LICENSE)
